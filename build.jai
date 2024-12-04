@@ -10,6 +10,7 @@ Arguments :: struct {
     day: s8 = -1;
     part: s8 = -1;
     clipboard: bool;
+    input_file: string;
 }
 
 #run build();
@@ -32,7 +33,13 @@ build :: () {
     }
 
     content: string;
-    if parsed_args.clipboard {
+    if (is_set.input_file) {
+        file_content, status := read_entire_file(parsed_args.input_file, log_errors=false);
+        if !status {
+            exit(1);
+        }
+        content = file_content;
+    } else if parsed_args.clipboard {
         #import "STL_Clipboard";
         success, clipboard := get_clipboard();
         content = clipboard;

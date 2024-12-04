@@ -1,4 +1,5 @@
 .apikey
 .input_cache
 .build
+.input
 a.out
