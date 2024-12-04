@@ -68,3 +68,23 @@ parse_line :: (line: string) -> [..] int {
     }
     return items;
 }
+
+array_get :: (arr: []$T, idx: int) -> T {
+  if idx >= arr.count || idx < 0 {
+    res: T;
+    return res;
+  } else {
+    return arr[idx];
+  }
+}
+
+grid_get :: (grid: [][]$T, i1: int, i2: int) -> T {
+  return array_get(array_get(grid, i1), i2);
+}
+
+ALL_CHARS :: "{!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~}";
+
+X :: cast(u8) #char "X";
+M :: cast(u8) #char "M";
+A :: cast(u8) #char "A";
+S :: cast(u8) #char "S";
