@@ -51,6 +51,13 @@ dbg :: (v: $T) -> T {
     return v;
 }
 
+panic :: (assertion: bool, format_string: string, args: .. Any) {
+    if !assertion {
+        println(format_string, ..args);
+        assert(false);
+    }
+} @PrintLike
+
 identity :: (v: $T) -> T {
     return v;
 }
@@ -88,3 +95,14 @@ X :: cast(u8) #char "X";
 M :: cast(u8) #char "M";
 A :: cast(u8) #char "A";
 S :: cast(u8) #char "S";
+
+StackRArr :: struct ($N: int, $T: Type) {
+  data: [N] T;
+  count := 0;
+}
+
+array_add :: (arr: *StackRArr, elem: $T) {
+  panic(arr.count < arr.data.count, "Tried pushing too many elements to StackRArr");
+  arr.data[arr.count] = elem;
+  arr.count += 1;
+}
