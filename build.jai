@@ -10,7 +10,7 @@ Arguments :: struct {
     day: s8 = -1;
     part: s8 = -1;
     clipboard: bool;
-    input_file: string;
+    temp_input: bool;
 }
 
 #run build();
@@ -33,8 +33,8 @@ build :: () {
     }
 
     content: string;
-    if (is_set.input_file) {
-        file_content, status := read_entire_file(parsed_args.input_file, log_errors=false);
+    if (parsed_args.temp_input) {
+        file_content, status := read_entire_file(".input", log_errors=false);
         if !status {
             exit(1);
         }
