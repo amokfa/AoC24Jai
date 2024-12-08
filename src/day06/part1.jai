@@ -3,16 +3,7 @@
 #import "String";
 
 main :: () {
-  grid: [..][] u8;
-  width: int;
-  for Spliterator.{source=copy_string(INPUT), skip_empty=true} {
-    if width == 0 {
-      width = it.count;;
-    }
-    panic(width == it.count, "non uniform grid");
-    array_add(*grid, cast([]u8) it);
-  }
-
+  grid := parse_input(INPUT);
   pos_y, pos_x, dir := find_guard(grid);
   grid[pos_y][pos_x] = char("X");
   while true {
@@ -74,6 +65,8 @@ move_guard_until_turn :: (grid: [..][]u8, start_y: int, start_x: int, direction:
     }
     curr_y, curr_x = next_y, next_x;
   }
+  panic(false, "you can't be here");
+  return false, -1, -1, .Up;
 }
 
 move_guard :: (grid: [..][]u8, start_y: int, start_x: int, direction: Direction) -> finished: bool, end_y: int, end_x: int, dir: Direction {
@@ -104,4 +97,17 @@ find_guard :: (grid: [..][]u8) -> int, int, Direction {
   }
   panic(false, "boo");
   return -1, -1, .Up;
+}
+
+parse_input :: (i: string) -> [..][]u8 {
+  grid: [..][] u8;
+  width := 0;
+  for Spliterator.{source=copy_string(i), skip_empty=true} {
+    if width == 0 {
+      width = it.count;;
+    }
+    panic(width == it.count, "non uniform grid");
+    array_add(*grid, cast([]u8) it);
+  }
+  return grid;
 }
