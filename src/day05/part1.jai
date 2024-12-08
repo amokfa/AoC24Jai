@@ -1,15 +1,5 @@
 #import "STL";
-using Basic :: #import "Basic";
 #import "String";
-
-Pair :: struct {
-  a, b: int;
-}
-
-operator == :: (p1: Pair, p2: Pair) -> bool {
-  return p1.a == p2.a && p1.b == p2.b;
-}
-#poke_name Basic operator==;
 
 main :: () {
   processing_pairs := true;

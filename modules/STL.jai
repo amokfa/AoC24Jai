@@ -3,6 +3,7 @@
 // Some generic utilities
 
 #import "Basic";
+Basic :: #import "Basic";
 #import "String";
 
 Spliterator :: struct {
@@ -89,7 +90,19 @@ grid_get :: (grid: [][]$T, i1: int, i2: int) -> T {
   return array_get(array_get(grid, i1), i2);
 }
 
-ALL_CHARS :: "{!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~}";
+grid_set :: (grid: [][]$T, i1: int, i2: int, val: T) {
+  grid[i1][i2] = val;
+}
+
+print :: (grid: [][]u8) {
+  for grid {
+    println("%", cast(string)it);
+  }
+}
+
+char :: ($s: string) -> u8 {
+  return s[0];
+}
 
 X :: cast(u8) #char "X";
 M :: cast(u8) #char "M";
@@ -105,4 +118,61 @@ array_add :: (arr: *StackRArr, elem: $T) {
   panic(arr.count < arr.data.count, "Tried pushing too many elements to StackRArr");
   arr.data[arr.count] = elem;
   arr.count += 1;
+}
+
+Pair :: struct {
+  a, b: int;
+}
+
+operator == :: (p1: Pair, p2: Pair) -> bool {
+  return p1.a == p2.a && p1.b == p2.b;
+}
+#poke_name Basic operator==;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#import "Thread";
+Simp :: #import "Simp";
+Input :: #import "Input";
+#import "Window_Creation";
+
+UiPainterContext :: struct($T: Type) {
+  painter: #type (*T);
+  data: T;
+}
+
+run_ui :: (painter: (*$T), data: T) {
+  thread := New(Thread);
+  thread.proc = ui_painter;
+  ui_context := New(UiPainterContext(T));
+  ui_context.painter = painter;
+  ui_context.data = data;
+  thread_init(thread, ui_painter);
+  thread_start(thread);
+}
+
+ui_painter :: (t: *Thread) -> s64 {
+  // ctx := cast(*UiPainterContext(T)) t.data;
+  window := create_window(512, 512, "AOC", 8);
+  width, height := Simp.get_render_dimensions(window);
+  Simp.set_render_target(window, .LEFT_HANDED);
+  quit := false;
+  while !quit {
+    Input.update_window_events();
+    for Input.get_window_resizes() {
+      Simp.update_window(it.window);
+    }
+    for Input.events_this_frame {
+      dbg(it);
+      if it.type == .QUIT then quit = true;
+    }
+
+    // drawing
+    
+    
+
+    sleep_milliseconds(10);
+    reset_temporary_storage();
+  }
+  return 0;
 }

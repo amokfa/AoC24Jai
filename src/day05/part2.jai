@@ -1,13 +1,11 @@
 #import "STL";
 using Basic :: #import "Basic";
 #import "String";
-P1 :: #import,file "./part1.jai";
-
 
 main :: () {
   processing_pairs := true;
   sequences: [..][..] int;
-  orderings: [..] P1.Pair;
+  orderings: [..] Pair;
   for Spliterator.{source=INPUT} {
     if it.count == 0 {
       processing_pairs = false;
