@@ -1,11 +1,7 @@
 #import "STL";
-#import "Basic";
+#import "Basic"
 #import "POSIX";
 P1 :: #import,file "part1.jai";
-
-main2 :: () {
-  dbg(loops(8, 3));
-}
 
 main :: () {
   result := 0;

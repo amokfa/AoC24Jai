@@ -129,6 +129,14 @@ operator == :: (p1: Pair, p2: Pair) -> bool {
 }
 #poke_name Basic operator==;
 
+pow :: (a: int, b: int) -> int {
+  result := 1;
+  for 0..b-1 {
+    result *= a;
+  }
+  return result;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #import "Thread";
@@ -176,3 +184,4 @@ ui_painter :: (t: *Thread) -> s64 {
   }
   return 0;
 }
+

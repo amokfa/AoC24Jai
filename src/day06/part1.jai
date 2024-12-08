@@ -3,7 +3,10 @@
 #import "String";
 
 main :: () {
-  grid := parse_input(INPUT);
+  ip := copy_string(INPUT);
+  defer free(ip);
+  grid := parse_input(ip);
+  defer array_free(grid);
   pos_y, pos_x, dir := find_guard(grid);
   grid[pos_y][pos_x] = char("X");
   while true {
@@ -25,6 +28,7 @@ main :: () {
     }
   }
   dbg(result);
+  report_memory_leaks();
 }
 
 Direction :: enum {
@@ -102,7 +106,7 @@ find_guard :: (grid: [..][]u8) -> int, int, Direction {
 parse_input :: (i: string) -> [..][]u8 {
   grid: [..][] u8;
   width := 0;
-  for Spliterator.{source=copy_string(i), skip_empty=true} {
+  for Spliterator.{source=i, skip_empty=true} {
     if width == 0 {
       width = it.count;;
     }
