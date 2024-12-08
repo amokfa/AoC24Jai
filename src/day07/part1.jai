@@ -1,29 +1,35 @@
 #import "STL";
 #import "String";
 #import "Math";
-#import "Basic"()(MEMORY_DEBUGGER=true);
+#import "Basic";
 
 main :: () {
   result := 0;
   for Spliterator.{source=INPUT, skip_empty=true} {
     lhs, rhs := parse_expr(it);
-    for pattern: 0..pow(2, rhs.count)-1 {
-      pattern_result := rhs[0];
-      for idx: 1..rhs.count-1 {
-        operation := pattern >> idx & 1;
-        if operation == 0 {
-          pattern_result += rhs[idx];
-        } else {
-          pattern_result *= rhs[idx];
-        }
-      }
-      if pattern_result == lhs {
-        result += lhs;
-        break;
-      }
+    if valid(lhs, rhs) {
+      result += lhs;
     }
   }
   dbg(result);
+}
+
+valid :: (lhs: int, rhs: []int) -> bool {
+  for pattern: 0..pow(2, rhs.count)-1 {
+    pattern_result := rhs[0];
+    for idx: 1..rhs.count-1 {
+      operation := pattern >> idx & 1;
+      if operation == 0 {
+        pattern_result += rhs[idx];
+      } else {
+        pattern_result *= rhs[idx];
+      }
+    }
+    if pattern_result == lhs {
+      return true;
+    }
+  }
+  return false;
 }
 
 parse_expr :: (line: string) -> int, [..] int {
