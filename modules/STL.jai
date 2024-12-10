@@ -137,6 +137,18 @@ pow :: (a: int, b: int) -> int {
   return result;
 }
 
+num_digs :: (n: int) -> int {
+  result := 1;
+  while true {
+    if n < 10 {
+      break;
+    }
+    n /= 10;
+    result += 1;
+  }
+  return result;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #import "Thread";

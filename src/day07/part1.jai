@@ -7,29 +7,21 @@ main :: () {
   result := 0;
   for Spliterator.{source=INPUT, skip_empty=true} {
     lhs, rhs := parse_expr(it);
-    if valid(lhs, rhs) {
+    if is_solvable(lhs, rhs, 0) {
       result += lhs;
     }
   }
   dbg(result);
 }
 
-valid :: (lhs: int, rhs: []int) -> bool {
-  for pattern: 0..pow(2, rhs.count)-1 {
-    pattern_result := rhs[0];
-    for idx: 1..rhs.count-1 {
-      operation := pattern >> idx & 1;
-      if operation == 0 {
-        pattern_result += rhs[idx];
-      } else {
-        pattern_result *= rhs[idx];
-      }
-    }
-    if pattern_result == lhs {
-      return true;
-    }
+is_solvable :: (lhs: int, rhs: [] int, interm: int) -> bool {
+  if rhs.count == 0 {
+    return lhs == interm;
+  } else {
+    next := rhs[0];
+    rest := rhs; rest.count -= 1; rest.data += 1;
+    return is_solvable(lhs, rest, interm + next) || is_solvable(lhs, rest, interm * next);
   }
-  return false;
 }
 
 parse_expr :: (line: string) -> int, [..] int {
