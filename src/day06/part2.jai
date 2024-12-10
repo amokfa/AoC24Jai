@@ -1,17 +1,18 @@
 #import "STL";
-#import "Basic"
-#import "POSIX";
+#import "Basic";
+#import "String";
 P1 :: #import,file "part1.jai";
 
 main :: () {
   result := 0;
-  grid := P1.parse_input(INPUT);
+  grid := P1.parse_input(copy_string(INPUT));
   for row, row_idx: grid {
     for cell, col_idx: row {
       if cell == #run char(".") {
         if loops(row_idx, col_idx) {
           result += 1;
         }
+        reset_temporary_storage();
       }
     }
   }
@@ -21,12 +22,13 @@ main :: () {
 GuardState :: struct {y: int; x: int; dir: P1.Direction;}
 
 loops :: (row_idx: int, col_idx: int) -> bool {
-  grid := P1.parse_input(INPUT);
+  grid := P1.parse_input(tprint("%", INPUT));
   grid[row_idx][col_idx] = #run char("#");
   m0y, m0x, dir := P1.find_guard(grid);
   grid[m0y][m0x] = char("X");
 
   past_states: [..] GuardState;
+  past_states.allocator = temp;
   array_add(*past_states, .{m0y, m0x, dir});
   while true {
     finished, next_y, next_x, next_dir := P1.move_guard_until_turn(grid, m0y, m0x, dir);

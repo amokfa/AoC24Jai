@@ -28,7 +28,6 @@ main :: () {
     }
   }
   dbg(result);
-  report_memory_leaks();
 }
 
 Direction :: enum {

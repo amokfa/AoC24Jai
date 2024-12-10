@@ -1,5 +1,5 @@
 #import "STL";
-using Basic :: #import "Basic";
+#import "Basic";
 #import "String";
 
 main :: () {
