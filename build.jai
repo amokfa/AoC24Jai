@@ -143,3 +143,4 @@ download_input :: (day: u8) -> bool, string {
     }
     return true, builder_to_string(*result);
 }
+
