@@ -5,19 +5,24 @@
 #import "Basic";
 Basic :: #import "Basic";
 #import "String";
+#import "Math";
+
+suba :: (a: []$T, s: int, e: int) -> []T {
+  result := a;
+  result.data += s;
+  result.count = e - s;
+  return result;
+}
+
+subs :: (s: string, start: int, end: int) -> string {
+  return cast(string) suba(cast([]u8) s, start, end);
+}
 
 Spliterator :: struct {
     source: string;
     current_index := 0;
     split_at := cast(u8) #char "\n";
     skip_empty := false;
-}
-
-subs :: (s: string, start: int, end: int) -> string {
-    result: string = ---;
-    result.data = s.data + start;
-    result.count = end - start;
-    return result;
 }
 
 for_expansion :: (iterator: Spliterator, body: Code, flags: For_Flags) #expand {
@@ -27,16 +32,16 @@ for_expansion :: (iterator: Spliterator, body: Code, flags: For_Flags) #expand {
         next_nl := find_index_from_left(remaining, iterator.split_at);
         `it: string = ---;
         if next_nl == -1 {
-            `it = remaining;
+            it = remaining;
             iterator.current_index = iterator.source.count+1;
         } else {
-            `it = subs(iterator.source, iterator.current_index, iterator.current_index+next_nl);
+            it = subs(iterator.source, iterator.current_index, iterator.current_index+next_nl);
             iterator.current_index += next_nl + 1;
         }
-        if iterator.skip_empty && `it.count == 0 {
+        if iterator.skip_empty && it.count == 0 {
             continue;
         }
-        `it_index += 1;
+        defer it_index += 1;
         #insert body;
     }
 }
@@ -129,6 +134,18 @@ operator == :: (p1: Pair, p2: Pair) -> bool {
 }
 #poke_name Basic operator==;
 
+operator - :: (p1: Pair, p2: Pair) -> Pair {
+  return .{p1.a-p2.a, p1.b-p2.b};
+}
+
+operator * :: (p: Pair, n: int) -> Pair {
+  return .{p.a * n, p.b * n};
+}
+
+abs :: (p: Pair) -> Pair {
+  return .{abs(p.a), abs(p.b)};
+}
+
 pow :: (a: int, b: int) -> int {
   result := 1;
   for 0..b-1 {
@@ -147,6 +164,20 @@ num_digs :: (n: int) -> int {
     result += 1;
   }
   return result;
+}
+
+parse_grid :: (i: string) -> [..][]u8 {
+  grid: [..][] u8;
+  grid.allocator = temp;
+  width := 0;
+  for Spliterator.{source=i, skip_empty=true} {
+    if width == 0 {
+      width = it.count;;
+    }
+    panic(width == it.count, "non uniform grid");
+    array_add(*grid, cast([]u8) it);
+  }
+  return grid;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -195,5 +226,51 @@ ui_painter :: (t: *Thread) -> s64 {
     reset_temporary_storage();
   }
   return 0;
+}
+
+ArrayMap :: struct ($K: Type, $V: Type, $N: int) {
+  ks: [N]K;
+  vs: [N]V;
+  index: [N]bool;
+}
+
+
+set :: (map: *ArrayMap($K, $V, $N), k: K, v: V) {
+  for map.index {
+    if !it {
+      map.ks[it_index] = k;
+      map.vs[it_index] = v;
+      map.index[it_index] = true;
+      return;
+    }
+  }
+}
+
+get :: (map: *ArrayMap($K, $V, $N), k: K) -> V {
+  for 0..N-1 {
+    if !map.index[it] continue;
+    if map.ks[it] == k {
+      return map.vs[it];
+    }
+  }
+  result: V= ---;
+  return result;
+}
+
+contains :: (map: *ArrayMap($K, $V, $N), k: K) -> bool {
+  for 0..N-1 {
+    if map.index[it] && map.ks[it] == k return true;
+  }
+  return false;
+}
+
+for_expansion :: (map: ArrayMap($K, $V, $N), body: Code, flags: For_Flags) #expand {
+  for n: 0..N-1 {
+    if map.index[n] {
+      `it_index := map.ks[n];
+      `it := map.vs[n];
+      #insert body;
+    }
+  }
 }
 

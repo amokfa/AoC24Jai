@@ -3,10 +3,8 @@
 #import "String";
 
 main :: () {
-  ip := copy_string(INPUT);
-  defer free(ip);
-  grid := parse_input(ip);
-  defer array_free(grid);
+  ip := tprint("%", INPUT);
+  grid := parse_grid(ip);
   pos_y, pos_x, dir := find_guard(grid);
   grid[pos_y][pos_x] = char("X");
   while true {
@@ -100,17 +98,4 @@ find_guard :: (grid: [..][]u8) -> int, int, Direction {
   }
   panic(false, "boo");
   return -1, -1, .Up;
-}
-
-parse_input :: (i: string) -> [..][]u8 {
-  grid: [..][] u8;
-  width := 0;
-  for Spliterator.{source=i, skip_empty=true} {
-    if width == 0 {
-      width = it.count;;
-    }
-    panic(width == it.count, "non uniform grid");
-    array_add(*grid, cast([]u8) it);
-  }
-  return grid;
 }

@@ -5,24 +5,23 @@ P1 :: #import,file "part1.jai";
 
 main :: () {
   result := 0;
-  grid := P1.parse_input(copy_string(INPUT));
+  grid := parse_grid(tprint("%", INPUT));
   for row, row_idx: grid {
     for cell, col_idx: row {
       if cell == #run char(".") {
         if loops(row_idx, col_idx) {
           result += 1;
         }
-        reset_temporary_storage();
       }
     }
   }
   dbg(result);
 }
 
-GuardState :: struct {y: int; x: int; dir: P1.Direction;}
+GuardState:: struct {y: int; x: int; dir: P1.Direction;}
 
 loops :: (row_idx: int, col_idx: int) -> bool {
-  grid := P1.parse_input(tprint("%", INPUT));
+  grid := parse_grid(tprint("%", INPUT));
   grid[row_idx][col_idx] = #run char("#");
   m0y, m0x, dir := P1.find_guard(grid);
   grid[m0y][m0x] = char("X");
