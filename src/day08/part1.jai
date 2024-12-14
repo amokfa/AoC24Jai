@@ -4,7 +4,7 @@
 
 
 main :: () {
-  input, R, C := parse_input();
+  input, R, C := parse_input(INPUT);
 
   result := 0;
   for r: 0..R-1 {
@@ -18,10 +18,6 @@ main :: () {
             del1 := loc1 - loc;
             del2 := loc2 - loc;
             if del1 * 2 == del2 || del2 * 2 == del1 || del1 * -2 == del2 || del2 * -2 == del1 {
-              // dbg(loc);
-              // dbg(loc1);
-              // dbg(loc2);
-              // dbg("============");
               result += 1;
               b = true;
               break;
@@ -41,7 +37,7 @@ main :: () {
   dbg(result);
 }
 
-parse_input :: () -> Table(u8, [..]Pair), int, int {
+parse_input :: (INPUT: string) -> Table(u8, [..]Pair), int, int {
   result: Table(u8, [..]Pair);
   init(*result);
   row_count := 0;

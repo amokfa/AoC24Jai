@@ -146,6 +146,14 @@ abs :: (p: Pair) -> Pair {
   return .{abs(p.a), abs(p.b)};
 }
 
+dot :: (p1: Pair, p2: Pair) -> int {
+  return p1.a * p2.a + p1.b * p2.b;
+}
+
+len2 :: (p: Pair) -> int {
+  return p.a * p.a + p.b * p.b;
+}
+
 pow :: (a: int, b: int) -> int {
   result := 1;
   for 0..b-1 {
