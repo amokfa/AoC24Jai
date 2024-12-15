@@ -14,11 +14,11 @@ main :: () {
 
   while curr_file > 0 {
     curr_hole := 1;
+    broke := false;
     while curr_hole < curr_file {
       file_size := input[curr_file];
       hole_size := input[curr_hole];
       if hole_size >= file_size {
-        println("putting file % in hole %", curr_file, curr_hole);
         // remove curr_file
         file_hole := input[curr_file+1];
         array_ordered_remove_by_index(*input, curr_file);
@@ -39,13 +39,15 @@ main :: () {
         end_id_idx := (curr_hole + 1) / 2;
         array_ordered_remove_by_index(*ids, start_id_idx);
         array_insert_at(*ids, start_id, end_id_idx);
+        broke = true;
+        break;
       }
       curr_hole += 2;
     }
-    curr_file -= 2;
+    if ! broke {
+      curr_file -= 2;
+    }
   }
-  dbg(input);
-  dbg(ids);
 
   buf_size := 0;
   for input buf_size += it;
@@ -59,7 +61,6 @@ main :: () {
       array_add(*layout, -1);
     }
   }
-  dbg(layout);
 
   dbg(P1.calculate_checksum(layout));
 }
