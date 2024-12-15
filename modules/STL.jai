@@ -282,3 +282,15 @@ for_expansion :: (map: ArrayMap($K, $V, $N), body: Code, flags: For_Flags) #expa
   }
 }
 
+
+operator == :: (a: $T, b: T) -> bool {
+  pa := cast(*u8) *a;
+  pb := cast(*u8) *b;
+  for 0..size_of(T)-1 {
+    if pa[it] != pb[it] {
+      return false;
+    }
+  }
+  return true;
+}
+#poke_name Basic operator==;
