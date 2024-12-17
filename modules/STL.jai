@@ -3,7 +3,6 @@
 // Some generic utilities
 
 #import "Basic";
-Basic :: #import "Basic";
 #import "String";
 #import "Math";
 
@@ -95,8 +94,29 @@ grid_get :: (grid: [][]$T, i1: int, i2: int) -> T {
   return array_get(array_get(grid, i1), i2);
 }
 
+grid_get :: (grid: [][]$T, p: Pair) -> T {
+  return grid_get(grid, p.a, p.b);
+}
+
 grid_set :: (grid: [][]$T, i1: int, i2: int, val: T) {
   grid[i1][i2] = val;
+}
+
+grid_set :: (grid: [..][..]$T, i1: int, i2: int, val: T) {
+  if i1 >= 0 && i1 < grid.count {
+    if i2 >= 0 && i2 < grid[0].count {
+      grid[i1][i2] = val;
+    }
+  }
+}
+
+grid_contains :: (grid: [][]$T, i1: int, i2: int) -> bool {
+  if i1 >= 0 && i1 < grid.count {
+    if i2 >= 0 && i2 < grid[0].count {
+      return true;
+    }
+  }
+  return false;
 }
 
 print :: (grid: [][]u8) {
@@ -132,7 +152,8 @@ Pair :: struct {
 operator == :: (p1: Pair, p2: Pair) -> bool {
   return p1.a == p2.a && p1.b == p2.b;
 }
-#poke_name Basic operator==;
+#poke_name (#import "Basic") operator==;
+#poke_name (#import "Hash_Table") operator==;
 
 operator - :: (p1: Pair, p2: Pair) -> Pair {
   return .{p1.a-p2.a, p1.b-p2.b};
@@ -152,6 +173,22 @@ dot :: (p1: Pair, p2: Pair) -> int {
 
 len2 :: (p: Pair) -> int {
   return p.a * p.a + p.b * p.b;
+}
+
+left :: (p: Pair) -> Pair {
+  return .{p.a, p.b-1};
+}
+
+right :: (p: Pair) -> Pair {
+  return .{p.a, p.b+1};
+}
+
+up :: (p: Pair) -> Pair {
+  return .{p.a-1, p.b};
+}
+
+down :: (p: Pair) -> Pair {
+  return .{p.a+1, p.b};
 }
 
 pow :: (a: int, b: int) -> int {
@@ -282,7 +319,6 @@ for_expansion :: (map: ArrayMap($K, $V, $N), body: Code, flags: For_Flags) #expa
   }
 }
 
-
 operator == :: (a: $T, b: T) -> bool {
   pa := cast(*u8) *a;
   pb := cast(*u8) *b;
@@ -293,4 +329,17 @@ operator == :: (a: $T, b: T) -> bool {
   }
   return true;
 }
-#poke_name Basic operator==;
+
+Hash :: #import "Hash";
+get_hash :: (v: $T, h: u32 = 5381) -> u32
+#modify {
+  ti := cast(*Type_Info) T;
+  return ti.type == .STRUCT;
+}
+{
+  array: []u8;
+  array.data = cast(*u8) *v;
+  array.count = size_of(T);
+  return Hash.get_hash(array, h);
+}
+#poke_name (#import "Hash") get_hash;
