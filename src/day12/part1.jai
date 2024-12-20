@@ -85,8 +85,5 @@ walk_region :: (grid: [][]u8, start: Pair, seen: *[..][..]bool) -> int, int {
     }
   }
   return area, circumference;
-  // walk the graph at (r, c)
-  // update seen, set all visited nodes to true
-  // update curr, set all visited nodes to true
 }
 

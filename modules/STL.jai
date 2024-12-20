@@ -98,6 +98,19 @@ grid_get :: (grid: [][]$T, p: Pair) -> T {
   return grid_get(grid, p.a, p.b);
 }
 
+array_get :: (arr: [..]$T, idx: int) -> T {
+  if idx >= arr.count || idx < 0 {
+    res: T;
+    return res;
+  } else {
+    return arr[idx];
+  }
+}
+
+grid_get :: (grid: [..][..]$T, p: Pair) -> T {
+  return array_get(array_get(grid, p.a), p.b);
+}
+
 grid_set :: (grid: [][]$T, i1: int, i2: int, val: T) {
   grid[i1][i2] = val;
 }
