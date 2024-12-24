@@ -172,6 +172,10 @@ operator - :: (p1: Pair, p2: Pair) -> Pair {
   return .{p1.a-p2.a, p1.b-p2.b};
 }
 
+operator + :: (p1: Pair, p2: Pair) -> Pair {
+  return .{p1.a+p2.a, p1.b+p2.b};
+}
+
 operator * :: (p: Pair, n: int) -> Pair {
   return .{p.a * n, p.b * n};
 }

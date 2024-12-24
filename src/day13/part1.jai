@@ -8,22 +8,22 @@ main :: () {
 }
 
 optimize :: (cfg: Cfg) -> int {
-  result := s64_MAX;
+  a := (cfg.bb.b * cfg.prize.a
+        - cfg.bb.a * cfg.prize.b)
+       / (cfg.ba.a * cfg.bb.b
+          - cfg.ba.b * cfg.bb.a);
 
-  a_max := cfg.prize.a / cfg.ba.a;
-  for a_count: 0..a_max {
-    leftover := cfg.prize - cfg.ba * a_count;
-    if leftover.a % cfg.bb.a == 0 && leftover.b % cfg.bb.b == 0
-      && leftover.a / cfg.bb.a == leftover.b / cfg.bb.b {
-      b_count := leftover.a / cfg.bb.a;
-      tokens := a_count * 3 + b_count;
-      if tokens < result && tokens > 0 {
-        result = tokens;
-      }
-    }
+  b := (cfg.prize.a - cfg.ba.a * a) / cfg.bb.a;
+
+  if a <= 0
+      || b <= 0
+      || cfg.prize != cfg.ba * a + cfg.bb * b
+  {
+      return 0;
   }
-
-  return ifx result == s64_MAX 0 else result;
+  else {
+      return 3 * a + b;
+  }
 }
 
 parse_input :: (input: string) -> [..] Cfg {
