@@ -356,3 +356,32 @@ get_hash :: (v: $T, h: u32 = 5381) -> u32
   return Hash.get_hash(array, h);
 }
 #poke_name (#import "Hash") get_hash;
+
+iget_max :: ($T: Type) -> T {
+  tig := cast(*Type_Info) T;
+  assert(tig.type == .INTEGER);
+  ti := cast(*Type_Info_Integer) T; 
+  result: T = 0;
+  result = ~result;
+  if ti.signed {
+    result &= ~(cast(T) 1 << (size_of(T) * 8 - 1));
+  }
+  return result;
+}
+
+iget_min :: ($T: Type) -> T {
+  tig := cast(*Type_Info) T;
+  assert(tig.type == .INTEGER);
+  ti := cast(*Type_Info_Integer) T; 
+  result: T = 0;
+  if ti.signed {
+    result |= (cast(T) 1 << (size_of(T) * 8 - 1));
+  }
+  return result;
+}
+
+u32_MIN :: #run iget_min(u32);
+u32_MAX :: #run iget_max(u32);
+
+s64_MIN :: #run iget_min(s64);
+s64_MAX :: #run iget_max(s64);
