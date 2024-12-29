@@ -13,8 +13,14 @@ suba :: (a: []$T, s: int, e: int) -> []T {
   return result;
 }
 
-subs :: (s: string, start: int, end: int) -> string {
-  return cast(string) suba(cast([]u8) s, start, end);
+subs :: (s: string, start: int, end: int = -1) -> string {
+  eend: int;
+  if end < 0 {
+    eend = s.count + end + 1;
+  } else {
+    eend = end;
+  }
+  return cast(string) suba(cast([]u8) s, start, eend);
 }
 
 Spliterator :: struct {
@@ -152,16 +158,82 @@ StackRArr :: struct ($N: int, $T: Type) {
   count := 0;
 }
 
+for_expansion :: (arr: *StackRArr, body: Code, flags: For_Flags) #expand {
+  for idx: 0..arr.count-1 {
+    `it := arr.data[idx];
+    `it_index := idx;
+    #insert body;
+  }
+}
+
+to_stack_arr :: (slice: [] $T, $N: int) -> StackRArr(N, T) {
+  #import "Basic";
+  result: StackRArr(N, T);
+  result.count = min(N, slice.count);
+  for 0..result.count-1 {
+    result.data[it] = slice[it];
+  }
+  return result;
+}
+
+to_stack_arr :: (s: string, $N: int) -> StackRArr(N, u8) {
+  return to_stack_arr(cast([]u8) s, N);
+}
+
+as_slice :: (arr: *StackRArr($N, $T)) -> [] T {
+  result: [] T;
+  result.data = cast(*T) arr;
+  result.count = arr.count;
+  return result;
+}
+
+as_string :: (arr: *StackRArr($N, u8)) -> string {
+  return cast(string) as_slice(arr);
+}
+
+first :: (arr: *StackRArr($N, $T)) -> T {
+  result: T = ---;
+  if arr.count > 0 {
+    result = arr.data[0];
+  }
+  return result;
+}
+
+last :: (arr: *StackRArr($N, $T)) -> T {
+  result: T = ---;
+  if arr.count > 0 {
+    result = arr.data[arr.count-1];
+  }
+  return result;
+}
+
+pop :: (arr: *StackRArr) {
+  arr.count -= 1;
+}
+
 array_add :: (arr: *StackRArr, elem: $T) {
   panic(arr.count < arr.data.count, "Tried pushing too many elements to StackRArr");
   arr.data[arr.count] = elem;
   arr.count += 1;
 }
 
+delete :: (arr: *StackRArr, idx: $T) {
+  for idx..arr.count-2 {
+    arr.data[idx] = arr.data[idx+1];
+  }
+  arr.count -= 1;
+}
+
+swap_after :: (arr: *StackRArr($N, $T), idx: int) {
+  panic(idx < N-1, "can't do this operation at the end");
+  tmp := arr.data[idx];
+  arr.data[idx] = arr.data[idx+1];
+  arr.data[idx+1] = tmp;
+}
+
 Pair :: struct {
   a, b: int;
 }
-
 operator == :: (p1: Pair, p2: Pair) -> bool {
   return p1.a == p2.a && p1.b == p2.b;
 }
@@ -178,6 +250,10 @@ operator + :: (p1: Pair, p2: Pair) -> Pair {
 
 operator * :: (p: Pair, n: int) -> Pair {
   return .{p.a * n, p.b * n};
+}
+
+operator / :: (p: Pair, n: int) -> Pair {
+  return .{p.a / n, p.b / n};
 }
 
 abs :: (p: Pair) -> Pair {
@@ -244,51 +320,51 @@ parse_grid :: (i: string) -> [..][]u8 {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#import "Thread";
-Simp :: #import "Simp";
-Input :: #import "Input";
-#import "Window_Creation";
+// #import "Thread";
+// Simp :: #import "Simp";
+// Input :: #import "Input";
+// #import "Window_Creation";
 
-UiPainterContext :: struct($T: Type) {
-  painter: #type (*T);
-  data: T;
-}
+// UiPainterContext :: struct($T: Type) {
+//   painter: #type (*T);
+//   data: T;
+// }
 
-run_ui :: (painter: (*$T), data: T) {
-  thread := New(Thread);
-  thread.proc = ui_painter;
-  ui_context := New(UiPainterContext(T));
-  ui_context.painter = painter;
-  ui_context.data = data;
-  thread_init(thread, ui_painter);
-  thread_start(thread);
-}
+// run_ui :: (painter: (*$T), data: T) {
+//   thread := New(Thread);
+//   thread.proc = ui_painter;
+//   ui_context := New(UiPainterContext(T));
+//   ui_context.painter = painter;
+//   ui_context.data = data;
+//   thread_init(thread, ui_painter);
+//   thread_start(thread);
+// }
 
-ui_painter :: (t: *Thread) -> s64 {
-  // ctx := cast(*UiPainterContext(T)) t.data;
-  window := create_window(512, 512, "AOC", 8);
-  width, height := Simp.get_render_dimensions(window);
-  Simp.set_render_target(window, .LEFT_HANDED);
-  quit := false;
-  while !quit {
-    Input.update_window_events();
-    for Input.get_window_resizes() {
-      Simp.update_window(it.window);
-    }
-    for Input.events_this_frame {
-      dbg(it);
-      if it.type == .QUIT then quit = true;
-    }
+// ui_painter :: (t: *Thread) -> s64 {
+//   // ctx := cast(*UiPainterContext(T)) t.data;
+//   window := create_window(512, 512, "AOC", 8);
+//   width, height := Simp.get_render_dimensions(window);
+//   Simp.set_render_target(window, .LEFT_HANDED);
+//   quit := false;
+//   while !quit {
+//     Input.update_window_events();
+//     for Input.get_window_resizes() {
+//       Simp.update_window(it.window);
+//     }
+//     for Input.events_this_frame {
+//       dbg(it);
+//       if it.type == .QUIT then quit = true;
+//     }
 
-    // drawing
-    
-    
+//     // drawing
+//
+//
 
-    sleep_milliseconds(10);
-    reset_temporary_storage();
-  }
-  return 0;
-}
+//     sleep_milliseconds(10);
+//     reset_temporary_storage();
+//   }
+//   return 0;
+// }
 
 ArrayMap :: struct ($K: Type, $V: Type, $N: int) {
   ks: [N]K;
@@ -361,31 +437,209 @@ get_hash :: (v: $T, h: u32 = 5381) -> u32
 }
 #poke_name (#import "Hash") get_hash;
 
-iget_max :: ($T: Type) -> T {
-  tig := cast(*Type_Info) T;
-  assert(tig.type == .INTEGER);
-  ti := cast(*Type_Info_Integer) T; 
-  result: T = 0;
-  result = ~result;
-  if ti.signed {
-    result &= ~(cast(T) 1 << (size_of(T) * 8 - 1));
+#import "GetRect_LeftHanded";
+pad :: (rect: Rect, amt: float32 = 0, vert: float32 = 0, horiz: float32 = 0) -> Rect {
+  vertt := ifx vert != 0 vert else amt;
+  horizz := ifx horiz != 0 horiz else amt;
+  return .{rect.x + horizz, rect.y + vertt, rect.w - 2*horizz, rect.h - 2*vertt};
+}
+
+split_horiz :: (rect: Rect, $N: int = 2) -> [N] Rect {
+  result: [N] Rect;
+  w := rect.w / N;
+  for 0..N-1 {
+    result[it] = .{rect.x + w * it, rect.y, w, rect.h};
   }
   return result;
 }
 
-iget_min :: ($T: Type) -> T {
-  tig := cast(*Type_Info) T;
-  assert(tig.type == .INTEGER);
-  ti := cast(*Type_Info_Integer) T; 
-  result: T = 0;
-  if ti.signed {
-    result |= (cast(T) 1 << (size_of(T) * 8 - 1));
+position_float :: (parent: Rect, w: float32 = -1.0, h: float32 = -1.0, top: float32 = -1.0, left: float32 = -1.0, bottom: float32 = -1.0, right: float32 = -1.0) -> Rect {
+  panic(top != -1 || bottom != -1, "at least one of top or bottom must be provided");
+  panic(left != -1 || right != -1, "at least one of left or right must be provided");
+  xmin, ymin, xmax, ymax: float32 = -1;
+  if left != -1 {
+    xmin = parent.x + left;
+  }
+  if top != -1 {
+    ymin = parent.y + top;
+  }
+  if right != -1 {
+    xmax = parent.x + parent.w - right;
+  }
+  if bottom != -1 {
+    ymax = parent.y + parent.h - bottom;
+  }
+
+  rw, rh: float32;
+  if xmin != -1 && xmax != -1 {
+    rw = xmax - xmin;
+  } else {
+    panic(w != -1, "invalid constraints");
+    rw = w;
+  }
+  if ymin != -1 && ymax != -1 {
+    rh = ymax - ymin;
+  } else {
+    panic(h != -1, "invalid constraints");
+    rh = h;
+  }
+
+  rx, ry: float32;
+  if xmin != -1 {
+    rx = xmin;
+  } else {
+    rx = xmax - rw;
+  }
+  if ymin != -1 {
+    ry = ymin;
+  } else {
+    ry = ymax - rh;
+  }
+  return .{rx, ry, rw, rh};
+}
+
+int_validator :: (s: string) -> bool {
+  if s.count <= 0 return false;
+  v, s, rest := string_to_int(s);
+  return s && rest.count == 0;
+}
+
+get_days_in_month :: (year: int, month: int) -> int {
+    // Check for valid month input
+    if month < 1 || month > 12 {
+        return 0; // Invalid month
+    }
+
+    // Array of days per month for non-leap years
+    days_in_month: [12]int = .[
+        31, // January
+        28, // February
+        31, // March
+        30, // April
+        31, // May
+        30, // June
+        31, // July
+        31, // August
+        30, // September
+        31, // October
+        30, // November
+        31  // December
+    ];
+
+    // Check for leap year and adjust February
+    if month == 2 && (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {
+        return 29; // Leap year February
+    }
+
+    // Return the number of days in the given month
+    return days_in_month[month - 1];
+}
+
+Date :: struct {
+  year: int;
+  month: int;
+  day: int;
+}
+
+date_from_string :: (s: string) -> result: Date, success: bool {
+  year, month, day: int;
+  success: bool;
+  rest: string;
+  year, success, rest = string_to_int(s);
+  if !success || rest.count == 0 return .{}, false;
+  if year < 2000 || year > 2050 return .{}, false;
+  if rest[0] != char("-") return .{}, false;
+
+  month, success, rest = string_to_int(drop(rest, 1));
+  if !success || rest.count == 0 return .{}, false;
+  if month < 1 || month > 12 return .{}, false;
+  if rest[0] != char("-") return .{}, false;
+
+  day, success, rest = string_to_int(drop(rest, 1));
+  if !success || rest.count != 0 return .{}, false;
+  if day < 1 || day > get_days_in_month(year, month) return .{}, false;
+
+  return .{year, month, day}, true;
+}
+
+to_stack_arr :: (date: Date, $N: int) -> StackRArr(N, u8) {
+  // N must be at least 11, 10 for date + 1 for \0 because we are using snprintf
+  #import "POSIX";
+  result: StackRArr(N, u8);
+  ptr := cast(*u8, *result.data);
+  snprintf(ptr, 5, "%04d", date.year);
+  ptr += 4;
+  ptr.* = char("-");
+  ptr += 1;
+  snprintf(ptr, 3, "%02d", date.month);
+  ptr+= 2;
+  ptr.* = char("-");
+  ptr += 1;
+  snprintf(ptr, 3, "%02d", date.day);
+  result.count = 10;
+  return result;
+}
+
+tomorrow :: (today: Date) -> Date {
+  result := today;
+  result.day += 1;
+  if result.day > get_days_in_month(result.year, result.month) {
+    result.day = 1;
+    result.month += 1;
+    if result.month > 12 {
+      result.month = 1;
+      result.year += 1;
+    }
   }
   return result;
 }
 
-u32_MIN :: #run iget_min(u32);
-u32_MAX :: #run iget_max(u32);
+yesterday :: (today: Date) -> Date {
+  result := today;
+  result.day -= 1;
+  if result.day == 0 {
+    result.month -= 1;
+    if result.month == 0 {
+      result.month = 12;
+      result.year -= 1;
+    }
+    result.day = get_days_in_month(result.year, result.month);
+  }
+  return result;
+}
 
-s64_MIN :: #run iget_min(s64);
-s64_MAX :: #run iget_max(s64);
+today :: () -> Date {
+  #import "POSIX";
+  t := time(null);
+  lt := localtime(*t);
+  return .{lt.tm_year+1900, lt.tm_mon+1, lt.tm_mday};
+}
+
+date_validator :: (s: string) -> bool {
+  _, result := date_from_string(s);
+  return result;
+}
+
+simp_validator :: (s: string) -> bool {
+  return s.count > 0;
+}
+
+drop :: (s: string, n: int) -> string {
+  if s.count < n return "";
+  result := s;
+  result.data = s.data+n;
+  result.count = s.count-n;
+  return result;
+}
+
+Range :: struct { start: int; end: int; }
+
+for_expansion :: (r: Range, code: Code, flags: For_Flags) #expand {
+  `it := r.start;
+  `it_index := 0;
+  while it < r.end {
+    #insert code;
+    it += 1;
+    it_index += 1;
+  }
+}

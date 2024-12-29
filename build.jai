@@ -121,7 +121,7 @@ download_input :: (day: u8) -> bool, string {
     init_string_builder(*result);
     write_callback :: (contents: *u8, count: u64, size: u64, buf: *String_Builder) -> u64 #c_call {
         total_size := count * size;
-        new_context: Context;
+        new_context: #Context;
         push_context new_context {
             append(buf, contents, cast(s64) total_size);
         }
