@@ -129,6 +129,10 @@ grid_set :: (grid: [..][..]$T, i1: int, i2: int, val: T) {
   }
 }
 
+grid_set :: (grid: [][]u8, p: Pair, val: u8) {
+  grid_set(grid, p.a, p.b, val);
+}
+
 grid_contains :: (grid: [][]$T, i1: int, i2: int) -> bool {
   if i1 >= 0 && i1 < grid.count {
     if i2 >= 0 && i2 < grid[0].count {
