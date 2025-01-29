@@ -139,7 +139,7 @@ download_input :: (day: u8) -> bool, string {
         return false, sprint("no response code!");
     }
     if status != 200 {
-        return false, sprint("HTTP Response: %", status);
+        return false, sprint("HTTP Response: %\nBody: %", status, builder_to_string(*result));
     }
     return true, builder_to_string(*result);
 }

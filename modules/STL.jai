@@ -647,3 +647,40 @@ for_expansion :: (r: Range, code: Code, flags: For_Flags) #expand {
     it_index += 1;
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+GenTupleImpl :: (n: int) -> string {
+  assert(n >= 2);
+
+  type_parameters: String_Builder;
+  init_string_builder(*type_parameters);
+  for 1..n {
+    append(*type_parameters, tprint("T%: Type", it));
+    if it != n {
+      append(*type_parameters, ", ");
+    }
+  }
+
+  fields: String_Builder;
+  init_string_builder(*fields);
+  for 1..n {
+    append(*fields, tprint(" f%: T%;", it, it));
+  }
+
+  return tprint("Tuple% :: struct (%) {% }", n, builder_to_string(*type_parameters), builder_to_string(*fields));
+}
+
+GenTuplesImpl :: (n: int) -> string {
+  code: String_Builder;
+  init_string_builder(*code);
+
+  for 2..n {
+    append(*code, GenTupleImpl(it));
+    if it != n append(*code, "\n");
+  }
+
+  return builder_to_string(*code);
+}
+
+#insert #run GenTuplesImpl(5);

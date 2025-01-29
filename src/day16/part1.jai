@@ -1,48 +1,89 @@
 
 main :: () {
-    grid, start, end := parse(INPUT);
-    print(*grid);
-    dbg(start);
-    dbg(end);
-    start_node := NodeType.{ start, .East };
-    end_node := NodeType.{end, .West};
-    dbg(dijkstra(*grid, start, end, get_neighbours));
+  grid, start, end := parse(INPUT);
+  start_node := NodeType.{ start, .East };
+  min := 999999999999;
+  min_node: NodeType;
+  mapping := dijkstra(*grid, start_node, get_neighbours);
+  for parent, node: mapping {
+    if node.coord == end {
+      if parent.distance < min {
+        min = parent.distance;
+        min_node = node;
+      }
+    }
+  }
+  while min_node != start_node {
+    marker: u8;
+    if min_node.facing == {
+      case .East; marker = char(">");
+      case .West; marker = char("<");
+      case .North; marker = char("^");
+      case .South; marker = char("v");
+    }
+    set(*grid, min_node.coord, marker);
+    ns, found := table_find(*mapping, min_node);
+    if !found {
+      assert(false);
+    }
+    min_node = ns.neighbour;
+  }
+  dbg(min);
 }
 
-Direction :: enum { East; West; North; South; }
+Direction :: enum { East; North; West; South; }
+left :: (d: Direction) -> Direction {
+  return cast(Direction, (cast(u8, d)+1) % 4);
+}
+right :: (d: Direction) -> Direction {
+  return cast(Direction, (cast(u8, d)-1) % 4);
+}
 NodeType :: struct { coord: Pair; facing: Direction; }
 
-get_neighbours :: (g: *Grid(u8), n: Pair) -> [..] NS(Pair) {
-  result: [..] NS(Pair);
-  delta: Pair;
+get_neighbours :: (g: *Grid(u8), n: NodeType) -> [..] NS(NodeType) {
+  result: [..] NS(NodeType);
+  for di: enum_values_as_s64(Direction) {
+    direction := cast(Direction) di;
+    array_add(*result, .{.{n.coord,  left(n.facing)}, 1000});
+    array_add(*result, .{.{n.coord, right(n.facing)}, 1000});
+  }
+  front: NodeType;
+  if n.facing == {
+    case .East; front = .{right(n.coord), n.facing};
+    case .West; front = .{left(n.coord), n.facing};
+    case .North; front = .{up(n.coord), n.facing};
+    case .South; front = .{down(n.coord), n.facing};
+  }
+  if get(g, front.coord) != char("#") {
+    array_add(*result, .{front, 1});
+  }
   return result;
 }
 
 NS :: struct (N: Type) {neighbour: N; distance: int;}
-PQ :: struct (N: Type, ascending: bool) { data: N; priority: int; next: *PQ = null; }
 
 parse :: (input: string) -> grid: Grid(u8), start: Pair, end: Pair {
-    data: [..]u8;
-    array_reserve(*data, input.count);
-    rows := 0;
-    cols := 0;
-    start, end: Pair;
-    for line: Spliterator.{source=input, split_at=char("\n"), skip_empty=true} {
-        if cols != 0 {
-            assert(line.count == cols);
-        } else {
-            cols = line.count;
-        }
-        for line {
-            array_add(*data, it);
-            if it == {
-                case #char "S"; start = .{rows, it_index};
-                case #char "E"; end = .{rows, it_index};
-            }
-        }
-        rows += 1;
+  data: [..]u8;
+  array_reserve(*data, input.count);
+  rows := 0;
+  cols := 0;
+  start, end: Pair;
+  for line: Spliterator.{source=input, split_at=char("\n"), skip_empty=true} {
+    if cols != 0 {
+      assert(line.count == cols);
+    } else {
+      cols = line.count;
     }
-    return .{data, rows, cols}, start, end;
+    for line {
+      array_add(*data, it);
+      if it == {
+        case #char "S"; start = .{rows, it_index};
+        case #char "E"; end = .{rows, it_index};
+      }
+    }
+    rows += 1;
+  }
+  return .{data, rows, cols}, start, end;
 }
 
 Grid :: struct ($T: Type) {
@@ -76,40 +117,6 @@ print :: (grid: *Grid($T)) {
         print("\n");
     }
 }
-
-// SortedLLNode :: struct ($T: Type) {
-//   data: T;
-//   weight: int;
-//   next: *SortedLL(T);
-// }
-
-// SortedLL :: struct ($T: Type) {
-//   head: *SortedLLNode;
-// }
-
-// add :: (ll: *SortedLL($T), node: T, weight: int) {
-//   new_node := New(SortedLL(T));
-//   if (ll.head == null || weight < ll.head.weight) {
-//     new_node.next = ll.head;
-//     ll.head = new_node;
-//   } else {
-//     parent_node := ll;
-//     while parent_node.next != null && parent_node.next.weight <= weight {
-//       parent_node = parent_node.next;
-//     }
-//     new_node.next = parent_node.next;
-//     parent_node.next = new_node;
-//   }
-// }
-
-// pop :: (ll: *SortedLL($T)) -> node: T, weight: int {
-//   if ll.head == null {
-//     return;
-//   }
-//   node, weight := ll.head.data, ll.head.weight;
-//   ll.head = ll.head.next;
-//   return node, weight;
-// }
 
 MinH :: struct ($T: Type) {
   nodes: [..] T;
@@ -172,13 +179,13 @@ heapify_down :: (using mh: *MinH($T), index: int) {
   }
 }
 
-dijkstra :: (graph: *$G, start: $N, end: N, neighbours: (*G, N) -> [..] NS(N)) -> Table(N, int) {
+dijkstra :: (graph: *$G, start: $N, neighbours: (*G, N) -> [..] NS(N)) -> Table(N, NS(N)) {
     // pool: Pool;
     // set_allocators(*pool);
     // old_allocator := context.allocator;
     // context.allocator = .{pool_allocator_proc, *pool};
 
-    all_distances: Table(N, int);
+    all_distances: Table(N, NS(N));
     visited_nodes: Table(N, bool);
     unvisited: MinH(N);
     add(*unvisited, start, 0);
@@ -193,17 +200,12 @@ dijkstra :: (graph: *$G, start: $N, end: N, neighbours: (*G, N) -> [..] NS(N)) -
       for neighbours(graph, node) {
         new_dist := dist + it.distance;
         curr_dist, found := table_find(*all_distances, it.neighbour);
-        if !found || new_dist < curr_dist {
-          table_set(*all_distances, it.neighbour, new_dist);
+        if !found || new_dist < curr_dist.distance {
+          table_set(*all_distances, it.neighbour, .{node, new_dist});
           add(*unvisited, it.neighbour, new_dist);
         }
       }
     }
-
-    // result, found := table_find(*all_distances, end);
-    // if !found {
-    //   assert(false, "wha happan?");
-    // }
 
     // context.allocator = old_allocator;
     // release(*pool);
