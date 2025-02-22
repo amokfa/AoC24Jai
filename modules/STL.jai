@@ -163,9 +163,12 @@ StackRArr :: struct ($N: int, $T: Type) {
 }
 
 for_expansion :: (arr: *StackRArr, body: Code, flags: For_Flags) #expand {
-  for idx: 0..arr.count-1 {
-    `it := arr.data[idx];
-    `it_index := idx;
+  `it_index := ifx (flags & .REVERSE) then arr.count-1 else 0;
+  end := ifx (flags & .REVERSE) then -1 else arr.count;
+  delta := ifx (flags & .REVERSE) then -1 else 1;
+  while it_index != end {
+    `it := arr.data[it_index];
+    defer it_index += delta;
     #insert body;
   }
 }
@@ -211,8 +214,10 @@ last :: (arr: *StackRArr($N, $T)) -> T {
   return result;
 }
 
-pop :: (arr: *StackRArr) {
+pop :: (arr: *StackRArr($N, $T)) -> T {
+  result := last(arr);
   arr.count -= 1;
+  return result;
 }
 
 array_add :: (arr: *StackRArr, elem: $T) {
@@ -642,9 +647,10 @@ for_expansion :: (r: Range, code: Code, flags: For_Flags) #expand {
   `it := r.start;
   `it_index := 0;
   while it < r.end {
+    defer it += 1;
+    defer it_index += 1;
+
     #insert code;
-    it += 1;
-    it_index += 1;
   }
 }
 
@@ -684,3 +690,57 @@ GenTuplesImpl :: (n: int) -> string {
 }
 
 #insert #run GenTuplesImpl(5);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Queue :: struct ($N: int, $T: Type) {
+  buffer: [N] T;
+  start: int = 0;
+  end: int = 0;
+}
+
+push :: (using q: *Queue($N, $T), value: T) {
+  next_end := (end + 1) % N;
+  buffer[next_end] = value;
+  if next_end == start {
+    start = (start + 1) % N;
+  }
+  end = next_end;
+}
+
+pop :: (q: Queue($N, $T)) -> T, bool {
+  res: T = ---;
+  return res, false;
+}
+
+for_expansion :: (q: *Queue($N, $T), body: Code, flags: For_Flags) #expand {
+  `it_index := 0;
+  buf_index := ifx (flags & .REVERSE) then q.end-1 else q.start;
+  buf_index = (buf_index + N) % N;
+  delta := ifx (flags & .REVERSE) then -1 else 1;
+  end := ifx (flags & .REVERSE) q.start else q.end-1;
+  while true {
+    `it := q.buffer[buf_index];
+    #insert body;
+
+    buf_index = (buf_index + delta + N) % N;
+    if buf_index == end {
+      break;
+    }
+  }
+}
+
+vert :: (v: Vector2) -> Vector2 {
+  return .{0, v.y};
+}
+
+horiz :: (v: Vector2) -> Vector2 {
+  return .{v.x, 0};
+}
+
+from_c_string :: (cs: *u8) -> string {
+  result: string;
+  result.data = cs;
+  result.count = c_style_strlen(cs);
+  return result;
+}
