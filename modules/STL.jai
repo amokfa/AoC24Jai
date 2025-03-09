@@ -226,9 +226,9 @@ array_add :: (arr: *StackRArr, elem: $T) {
   arr.count += 1;
 }
 
-delete :: (arr: *StackRArr, idx: $T) {
+delete :: (arr: *StackRArr, idx: int) {
   for idx..arr.count-2 {
-    arr.data[idx] = arr.data[idx+1];
+    arr.data[it] = arr.data[it+1];
   }
   arr.count -= 1;
 }
@@ -447,10 +447,14 @@ get_hash :: (v: $T, h: u32 = 5381) -> u32
 #poke_name (#import "Hash") get_hash;
 
 #import "GetRect_LeftHanded";
-pad :: (rect: Rect, amt: float32 = 0, vert: float32 = 0, horiz: float32 = 0) -> Rect {
+pad :: (rect: Rect, amt := 0.0, vert := 0.0, horiz := 0.0, left := 0.0, right := 0.0, up := 0.0, down := 0.0) -> Rect {
   vertt := ifx vert != 0 vert else amt;
   horizz := ifx horiz != 0 horiz else amt;
-  return .{rect.x + horizz, rect.y + vertt, rect.w - 2*horizz, rect.h - 2*vertt};
+  lleft := ifx left != 0 then left else horizz;
+  rright := ifx right != 0 then right else horizz;
+  uup := ifx up != 0 then up else vertt;
+  ddown := ifx down != 0 then down else vertt;
+  return .{rect.x + lleft, rect.y + uup, rect.w - lleft - rright, rect.h - uup - ddown};
 }
 
 split_horiz :: (rect: Rect, $N: int = 2) -> [N] Rect {
@@ -589,6 +593,15 @@ to_stack_arr :: (date: Date, $N: int) -> StackRArr(N, u8) {
   return result;
 }
 
+to_temp_string :: (d: Date) -> string {
+  return tprint(
+    "%-%-%",
+    formatInt(d.year, minimum_digits=4, padding=#char "0"),
+    formatInt(d.month, minimum_digits=2, padding=#char "0"),
+    formatInt(d.day, minimum_digits=2, padding=#char "0"),
+  );
+}
+
 tomorrow :: (today: Date) -> Date {
   result := today;
   result.day += 1;
@@ -600,6 +613,28 @@ tomorrow :: (today: Date) -> Date {
       result.year += 1;
     }
   }
+  return result;
+}
+
+one_month_later :: (today: Date) -> Date {
+  result := today;
+  max_in_this_month := get_days_in_month(result.year, result.month);
+  if result.day != max_in_this_month {
+    result.day = max_in_this_month;
+    return result;
+  }
+  result.month += 1;
+  if result.month > 12 {
+    result.month = 1;
+    result.year += 1;
+  }
+  result.day = get_days_in_month(result.year, result.month);
+  return result;
+}
+
+one_year_later :: (today: Date) -> Date {
+  result := today;
+  result.year += 1;
   return result;
 }
 
@@ -617,11 +652,88 @@ yesterday :: (today: Date) -> Date {
   return result;
 }
 
+one_month_ago :: (today: Date) -> Date {
+  result := today;
+  if result.day != 1 {
+    result.day = 1;
+    return result;
+  }
+  result.month -= 1;
+  if result.month == 0 {
+    result.month = 12;
+    result.year -= 1;
+  }
+  result.day = 1;
+  return result;
+}
+
+one_year_ago :: (today: Date) -> Date {
+  result := today;
+  result.year -= 1;
+  return result;
+}
+
 today :: () -> Date {
   #import "POSIX";
   t := time(null);
   lt := localtime(*t);
   return .{lt.tm_year+1900, lt.tm_mon+1, lt.tm_mday};
+}
+
+julian_date :: (d: Date) -> int {
+  a := (14 - d.month) / 12;
+  y := d.year + 4800 - a;
+  m := d.month + 12 * a - 3;
+  return d.day + (153 * m + 2) / 5 + 365 * y + y/4 - y/100 + y/400 - 32045;
+}
+
+julian_to_date :: (jd: int) -> Date {
+    d: Date;
+    a := jd + 32044;
+    b := (4 * a + 3) / 146097;
+    c := a - (146097 * b) / 4;
+    d_val := (4 * c + 3) / 1461;
+    e := c - (1461 * d_val) / 4;
+    m := (5 * e + 2) / 153;
+
+    d.day = (e - (153 * m + 2) / 5 + 1);
+    d.month = (m + 3 - 12 * (m / 10));
+    d.year = (100 * b + d_val - 4800 + (m / 10));
+    return d;
+}
+
+// distance in days
+operator - :: (d1: Date, d2: Date) -> int {
+  return julian_date(d1) - julian_date(d2);
+}
+
+operator > :: (d1: Date, d2: Date) -> bool {
+  return julian_date(d1) > julian_date(d2);
+}
+
+day_of_week :: (d: Date) -> int {
+    q := d.day;
+    m := d.month;
+    y := d.year;
+    if m < 3 {
+        m += 12;
+        y -= 1;
+    }
+    K := y % 100;
+    J := y / 100;
+    h := (q + (13*(m+1))/5 + K + K/4 + J/4 + 5*J) % 7;
+    return h;
+}
+
+previous_sunday :: (d: Date) -> Date {
+    // Using Zeller's, Sunday is represented by 1.
+    h := day_of_week(d);
+    // Compute the offset in days: if already Sunday (h == 1), subtract 0 days.
+    // For other days, (h + 6) % 7 gives the number of days to subtract.
+    days_to_subtract := (h + 6) % 7;
+    jd := julian_day(d);
+    sunday_jd := jd - days_to_subtract;
+    return julian_to_date(sunday_jd);
 }
 
 date_validator :: (s: string) -> bool {
@@ -738,9 +850,24 @@ horiz :: (v: Vector2) -> Vector2 {
   return .{v.x, 0};
 }
 
-from_c_string :: (cs: *u8) -> string {
-  result: string;
-  result.data = cs;
-  result.count = c_style_strlen(cs);
-  return result;
+bytemuck :: ($O: Type, value: $I) -> O
+#modify {
+  return true;
+  // return size_of(O) == size_of(I);
+}
+{
+  return cast(*O, *value).*;
+}
+
+is_allnum :: (c: u8) -> bool {
+    if c >= #char "0" && c <= #char "9" {
+        return true;
+    }
+    if c >= #char "A" && c <= #char "Z" {
+        return true;
+    }
+    if c >= #char "a" && c <= #char "z" {
+        return true;
+    }
+    return false;
 }
