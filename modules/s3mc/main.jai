@@ -1,47 +1,21 @@
 
 main :: () {
-  a := JsonValue.{ .Int, .{ Int = 12 }};
-  print_vars(a);
-}
-
-#insert #run gentenum_impl(
-  "JsonValue",
-  .[
-    .{ "Int", int },
-    .{ "Float", float },
-    .{ "String", string },
-  ]
-);
-
-EnumVariant :: struct {
-  name: string;
-  data: Type;
-}
-
-gentenum_impl :: (name: string, variants: [] EnumVariant) -> string {
-  result: String_Builder;
-  result.allocator = temp;
-
-  tag_list: String_Builder; tag_list.allocator = temp;
-  for variants append(*tag_list, tprint(" %;", it.name));
-  tag_def: String_Builder; tag_def.allocator = temp;
-  append(*tag_def, tprint("enum {% }", builder_to_string(*tag_list)));
-
-  data_union: String_Builder; data_union.allocator = temp;
-  for variants append(*data_union, tprint("    %: %;\n", it.name, it.data));
-  append(
-    *result,
-    tprint(
-      "% :: struct {\n  tag: %;\n  data: union {\n%  }\n}",
-      name, builder_to_string(*tag_def), builder_to_string(*data_union)
-    )
-  );
-
-  return builder_to_string(*result);
+  dbr := DB.open("/home/sagartiwari/src/dotfies/finances.db");
+  if dbr.tag == .Err {
+    print("couldn't open database: %\n", dbr.data.Err);
+    return;
+  }
+  db := dbr.data.Ok;
+  er := DB.exec(db, "SELECT 1");
+  if er.tag == .Err {
+    print("exec error: %\n", er.data.Err);
+  } else {
+    print("ok");
+  }
 }
 
 #scope_file
 
 #import "Basic";
 #import "Print_Vars";
-DB :: #import,file "bindings.jai";
+DB :: #import,file "module.jai";
