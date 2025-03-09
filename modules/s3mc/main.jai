@@ -1,6 +1,7 @@
 
 main :: () {
-
+  a := JsonValue.{ .Int, .{ Int = 12 }};
+  print_vars(a);
 }
 
 #insert #run gentenum_impl(
@@ -40,13 +41,6 @@ gentenum_impl :: (name: string, variants: [] EnumVariant) -> string {
 }
 
 #scope_file
-
-// JsonValue :: union {
-//   tag: JsonValueTag;
-//   data_Int: int,
-//   data_Float: float,
-//   data_String: string,
-// }
 
 #import "Basic";
 #import "Print_Vars";
