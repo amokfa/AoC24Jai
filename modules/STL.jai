@@ -871,3 +871,13 @@ is_allnum :: (c: u8) -> bool {
     }
     return false;
 }
+
+print :: (t: *Table($K, $V)) {
+  println("Table(%, %) {", K, V);
+  for v, k: t {
+    println("  % -> %", k, v);
+  }
+  println("}");
+}
+
+#import "Hash_Table";
