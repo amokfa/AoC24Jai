@@ -1,14 +1,10 @@
 
 main :: () {
-  ap, rp := parse_input(INPUT);
-  print_vars(ap, rp);
+  ap, rp := parse(INPUT);
   result := 0;
   for pattern: rp {
     if is_valid(pattern, ap) {
       result += 1;
-      println("% is valid", pattern);
-    } else {
-      println("% is not valid", pattern);
     }
   }
   print_vars(result);
@@ -30,7 +26,7 @@ is_valid :: (pattern: string, available_patterns: [] string) -> bool {
   return false;
 }
 
-parse_input :: (s: string) -> [..] string, [..] string {
+parse :: (s: string) -> [..] string, [..] string {
   state: enum { PART1; PART2; } = .PART1;
   available_patterns: [..] string;
   required_patterns: [..] string;
