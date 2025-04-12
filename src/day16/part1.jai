@@ -134,6 +134,7 @@ add :: (using mh: *MinH($T), node: T, weight: int) {
     }
     Swap(*nodes[index], *nodes[parent_index]);
     Swap(*weights[index], *weights[parent_index]);
+    index = parent_index;
   }
 }
 
