@@ -1,19 +1,6 @@
 main :: () {
-  values, exprs := parse(INPUT);
-  while true {
-    did_something := false;
-    for expr, name: exprs {
-      if !table_contains(*values, name) {
-        v1, found1 := table_find(*values, expr.c1);
-        v2, found2 := table_find(*values, expr.c2);
-        if found1 && found2 {
-          table_set(*values, name, perform(expr.op, v1, v2));
-          did_something = true;
-        }
-      }
-    }
-    if !did_something break;
-  }
+  values, gates := parse(INPUT);
+  run_circuit(*values, gates);
   result := 0;
   for value, name: values {
     if name[0] == #char "z" {
@@ -27,6 +14,23 @@ main :: () {
   dbg(result);
 }
 
+run_circuit :: (values: *Table(string, int), gates: [] Gate) {
+  while true {
+    did_something := false;
+    for gate: gates {
+      if !table_contains(values, gate.output) {
+        v1, found1 := table_find(values, gate.c1);
+        v2, found2 := table_find(values, gate.c2);
+        if found1 && found2 {
+          table_set(values, gate.output, perform(gate.op, v1, v2));
+          did_something = true;
+        }
+      }
+    }
+    if !did_something break;
+  }
+}
+
 perform :: (op: Op, v1: int, v2: int) -> int {
   if op == {
     case .AND; return v1 & v2;
@@ -37,9 +41,9 @@ perform :: (op: Op, v1: int, v2: int) -> int {
   return 0;
 }
 
-parse :: (s: string) -> Table(string, int), Table(string, Expr) {
+parse :: (s: string) -> Table(string, int), [..] Gate {
   inputs: Table(string, int);
-  exprs:  Table(string, Expr);
+  gates:  [..] Gate;
 
   parsing_inputs := true;
   for line: Spliterator.{ source=s, skip_empty=false } {
@@ -71,17 +75,41 @@ parse :: (s: string) -> Table(string, int), Table(string, Expr) {
         }
       }
       assert(count == 5, line);
-      table_set(*exprs, name, .{c1, c2, op});
+      array_add(*gates, .{c1, c2, op, name});
     }
   }
-  return inputs, exprs;
+  return inputs, gates;
 }
 
-Expr :: struct {
+Gate :: struct {
   c1, c2: string;
   op: Op;
+  output: string;
 }
 Op :: enum { AND; OR; XOR; };
+
+//attach_gates :: (gates: [] Gate) -> [..] AssembledGate, [..] AssembledGate {
+//  all_gates: [..] AssembledGate;
+//  for gate: gates {
+//    array_add(*all_gates, );
+//  }
+//  return all_gates, output_gates;
+//}
+//AssembledGate :: struct {
+//  type: AGType;
+//  fixed_value: int;
+//  c1, c2: *AssembledGate;
+//  op: Op;
+//}
+//AGType :: enum { FIXED; DERIVED; };
+//#insert #run gentenum_impl(
+//  "AssembledGate",
+//  .[
+//    .{ "FixedValue", int },
+//    .{ "Derived", Gate }
+//  ]
+//);
+//Gyatt :: struct { c1, c2: *AssembledGate; op: Op; };
 
 #import "STL";
 #import "Basic";
