@@ -30,69 +30,37 @@ main :: () {
   b15_candidates:, found = table_find(*oi_mapping, 0);
   b16_candidates:, found = table_find(*oi_mapping, 3);
 
+  seven_bits := 0b1111111;
   for c1: b1_candidates {
-      for c2: b2_candidates {
-          if c1 >> 3 == c2 & 0b1111111 {
-              for c3: b3_candidates {
-                  if c2 >> 3 == c3 & 0b1111111 {
-                      for c4: b4_candidates {
-                          if c3 >> 3 == c4 & 0b1111111 {
-                              for c5: b5_candidates {
-                                  if c4 >> 3 == c5 & 0b1111111 {
-                                      for c6: b6_candidates {
-                                          if c5 >> 3 == c6 & 0b1111111 {
-                                              for c7: b7_candidates {
-                                                  if c6 >> 3 == c7 & 0b1111111 {
-                                                      for c8: b8_candidates {
-                                                          if c7 >> 3 == c8 & 0b1111111 {
-                                                              for c9: b9_candidates {
-                                                                  if c8 >> 3 == c9 & 0b1111111 {
-                                                                      for c10: b10_candidates {
-                                                                          if c9 >> 3 == c10 & 0b1111111 {
-                                                                              for c11: b11_candidates {
-                                                                                  if c10 >> 3 == c11 & 0b1111111 {
-                                                                                      for c12: b12_candidates {
-                                                                                          if c11 >> 3 == c12 & 0b1111111 {
-                                                                                              for c13: b13_candidates {
-                                                                                                  if c12 >> 3 == c13 & 0b1111111 {
-                                                                                                      for c14: b14_candidates {
-                                                                                                          if c13 >> 3 == c14 & 0b1111111 {
-                                                                                                              for c15: b15_candidates {
-                                                                                                                  if c14 >> 3 == c15 & 0b1111111 {
-                                                                                                                      for c16: b16_candidates {
-                                                                                                                          if c15 >> 3 == c16 & 0b1111111 {
-                                                                                                                              println("% and % and % and % and % and % and % and % and % and % and % and % and % and % and % and %",
-                                                                                                                                c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16);
-                                                                                                                          }
-                                                                                                                      }
-                                                                                                                  }
-                                                                                                              }
-                                                                                                          }
-                                                                                                      }
-                                                                                                  }
-                                                                                              }
-                                                                                          }
-                                                                                      }
-                                                                                  }
-                                                                              }
-                                                                          }
-                                                                      }
-                                                                  }
-                                                              }
-                                                          }
-                                                      }
-                                                  }
-                                              }
-                                          }
-                                      }
-                                  }
+    for c2: b2_candidates {
+      if (c1 >> 3) == (c2 & seven_bits) {
+        for c3: b3_candidates {
+          if ((c2 >> 3) & seven_bits) == (c3 & seven_bits) {
+            for c4: b4_candidates {
+              if ((c3 >> 3) & seven_bits) == (c4 & seven_bits) {
+                for c5: b5_candidates {
+                  if ((c4 >> 3) & seven_bits) == (c5 & seven_bits) {
+                    for c6: b6_candidates {
+                      if ((c5 >> 3) & seven_bits) == (c6 & seven_bits) {
+                        for c7: b7_candidates {
+                          if ((c6 >> 3) & seven_bits) == (c7 & seven_bits) {
+                            for c8: b8_candidates {
+                              if ((c7 >> 3) & seven_bits) == (c8 & seven_bits) {
+                                println("%", c1 | (c2 << 3) | (c3 << 6) | (c4 << 9) | (c5 << 12) | (c6 << 15) | (c7 << 18) | (c8 << 21));
                               }
+                            }
                           }
+                        }
                       }
+                    }
                   }
+                }
               }
+            }
           }
+        }
       }
+    }
   }
 }
 

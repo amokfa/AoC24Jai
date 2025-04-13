@@ -13,13 +13,16 @@ run :: (exe: *Exe) -> [..] int {
   ip := 0;
   while ip < exe.program.count {
     opcode := cast(Opcode, exe.program[ip]);
+    ca := combo(exe, ip+1);
+    la := exe.program[ip+1];
     if opcode == {
-      case .Adv; exe.ra = exe.ra / pow(2, combo(exe, ip+1));
-      case .Bxl; exe.rb ^= exe.program[ip+1];
-      case .Bst; exe.rb = combo(exe, ip+1) % 8;
-      case .Out; array_add(*result, combo(exe, ip+1) % 8);
-      case .Bdv; exe.rb = exe.ra / pow(2, combo(exe, ip+1));
-      case .Cdv; exe.rb = exe.ra / pow(2, combo(exe, ip+1));
+      case .Adv; exe.ra = exe.ra >> ca;
+      case .Bxl; exe.rb ^= la;
+      case .Bst; exe.rb = ca & 0b111;
+      case .Bxc; exe.rb ^= exe.rc;
+      case .Out; array_add(*result, ca & 0b111);
+      case .Bdv; exe.rb = exe.ra >> ca;
+      case .Cdv; exe.rc = exe.ra >> ca;
     }
     if opcode == .Jnz {
       if exe.ra != 0 {
@@ -40,9 +43,9 @@ combo :: (exe: *Exe, addr: int) -> int {
     return literal;
   }
   if literal == {
-    case 4; return exe.ra;
-    case 5; return exe.rb;
-    case 6; return exe.rc;
+    case 4; return exe.ra & 0b111;
+    case 5; return exe.rb & 0b111;
+    case 6; return exe.rc & 0b111;
   }
   dbg(addr);
   dbg(literal);
@@ -76,3 +79,4 @@ Opcode :: enum {
 
 #import "Basic";
 #import "STL";
+#import "Print_Vars";
