@@ -47,6 +47,7 @@ combo :: (exe: *Exe, addr: int) -> int {
   dbg(addr);
   dbg(literal);
   assert(false);
+  return 0;
 }
 
 Exe :: struct { ra: int; rb: int; rc: int; program: [..] int; }
@@ -66,6 +67,7 @@ parse :: (input: string) -> Exe {
     }
   }
   assert(false);
+  return .{};
 }
 
 Opcode :: enum {
