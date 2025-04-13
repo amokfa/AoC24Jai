@@ -32,6 +32,7 @@ main :: () {
 
   result := S64_MAX;
   seven_bits := 0b1111111;
+  // https://www.youtube.com/watch?v=Q0AUm-vXdkw
   for c1: b1_candidates {
     for c2: b2_candidates {
       if (c1 >> 3) == (c2 & seven_bits) {
