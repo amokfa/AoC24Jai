@@ -27,9 +27,10 @@ main :: () {
   b12_candidates:, found = table_find(*oi_mapping, 0);
   b13_candidates:, found = table_find(*oi_mapping, 5);
   b14_candidates:, found = table_find(*oi_mapping, 5);
-  b15_candidates:, found = table_find(*oi_mapping, 0);
-  b16_candidates:, found = table_find(*oi_mapping, 3);
+  b15_candidates:, found = table_find(*oi_mapping, 3);
+  b16_candidates:, found = table_find(*oi_mapping, 0);
 
+  result := S64_MAX;
   seven_bits := 0b1111111;
   for c1: b1_candidates {
     for c2: b2_candidates {
@@ -46,7 +47,48 @@ main :: () {
                           if ((c6 >> 3) & seven_bits) == (c7 & seven_bits) {
                             for c8: b8_candidates {
                               if ((c7 >> 3) & seven_bits) == (c8 & seven_bits) {
-                                println("%", c1 | (c2 << 3) | (c3 << 6) | (c4 << 9) | (c5 << 12) | (c6 << 15) | (c7 << 18) | (c8 << 21));
+                                for c9: b9_candidates {
+                                  if ((c8 >> 3) & seven_bits) == (c9 & seven_bits) {
+                                    for c10: b10_candidates {
+                                      if ((c9 >> 3) & seven_bits) == (c10 & seven_bits) {
+                                        for c11: b11_candidates {
+                                          if ((c10 >> 3) & seven_bits) == (c11 & seven_bits) {
+                                            for c12: b12_candidates {
+                                              if ((c11 >> 3) & seven_bits) == (c12 & seven_bits) {
+                                                for c13: b13_candidates {
+                                                  if ((c12 >> 3) & seven_bits) == (c13 & seven_bits) {
+                                                    for c14: b14_candidates {
+                                                      if ((c13 >> 3) & seven_bits) == (c14 & seven_bits) {
+                                                        for c15: b15_candidates {
+                                                          if ((c14 >> 3) & seven_bits) == (c15 & seven_bits) {
+                                                            for c16: b16_candidates {
+                                                              if ((c15 >> 3) & seven_bits) == (c16 & seven_bits) {
+                                                                num := c1 | (c2 << 3)  | (c3 << 6)  | (c4 << 9)  | (c5 << 12) | (c6 << 15) | (c7 << 18) | (c8 << 21) | (c9 << 24) | (c10 << 27)| (c11 << 30)| (c12 << 33) | (c13 << 36)| (c14 << 39)| (c15 << 42)| (c16 << 45);
+                                                                exe.ra = num; exe.rb = 0; exe.rb = 0;
+                                                                outputs := P1.run(*exe); defer array_free(outputs);
+                                                                if outputs.count == exe.program.count {
+                                                                  equal := true;
+                                                                  for Range.{0, exe.program.count} {
+                                                                    if exe.program[it] != outputs[it] equal = false;
+                                                                  }
+                                                                  if equal && num < result result = num;
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
                               }
                             }
                           }
@@ -62,6 +104,7 @@ main :: () {
       }
     }
   }
+  dbg(result);
 }
 
 do_temp_example :: () {
@@ -129,5 +172,6 @@ literal_repr :: (arg: int) -> string {
 
 P1 :: #import,file "part1.jai";
 #import "STL";
+#import "Math";
 #import "Basic";
 #import "Hash_Table";
