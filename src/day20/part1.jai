@@ -1,44 +1,37 @@
 main :: () {
   grid, start, end := D16.parse(INPUT);
-  gwc := GridWithCheat.{ grid, .{-1, -1} };
-  //curr := end;
-  //while curr != start {
-  //  marker := char("O");
-  //  set(*grid, curr, marker);
-  //  ns, found := table_find(*mapping, curr);
-  //  assert(found);
-  //  curr = ns.neighbour;
-  //}
-  //print(*gwc.grid);
 
-  mapping := dijkstra(*gwc, start, get_neighbours);
+  mapping := dijkstra(*grid, start, get_neighbours);
   finish, found := table_find(*mapping, end);
   assert(found);
   legal_time := finish.distance;
 
+  path: [..] Pair;
+  curr_node := end;
+  while true {
+    array_add(*path, curr_node);
+    if curr_node == start break;
+    next_node, found := table_find(*mapping, curr_node);
+    assert(found);
+    curr_node = next_node.neighbour;
+  }
   result := 0;
-  for r: Range.{1, grid.rows-1} {
-    for c: Range.{1, grid.cols-1} {
-      if get(*grid, .{r, c}) != char("#") continue;
-      gwc := GridWithCheat.{ grid, .{r, c} };
-      mapping := dijkstra(*gwc, start, get_neighbours);
-      finish, found := table_find(*mapping, end);
-      assert(found);
-      cheat_time := finish.distance;
-      if legal_time - cheat_time >= 100 {
-        result += 1;
+
+  for i1: Range.{0, path.count} {
+    for i2: Range.{i1+1, path.count} {
+      if dist(path[i1], path[i2]) == 2 {
+        if i2 - i1 >= 100 + 2 result += 1;
       }
     }
   }
   dbg(result);
 }
 
-GridWithCheat :: struct {
-  grid: Grid(u8);
-  cheat: Pair;
+dist :: (p1: Pair, p2: Pair) -> int {
+  return abs(p1.a-p2.a) + abs(p1.b-p2.b);
 }
 
-get_neighbours :: (grid: *GridWithCheat, node: Pair) -> [..] NS(Pair) {
+get_neighbours :: (grid: *Grid(u8), node: Pair) -> [..] NS(Pair) {
   result: [..] NS(Pair);
   for 0..3 {
     dir := cast(D16.Direction, it);
@@ -49,7 +42,7 @@ get_neighbours :: (grid: *GridWithCheat, node: Pair) -> [..] NS(Pair) {
       case .North; front = up(node);
       case .South; front = down(node);
     }
-    if front == grid.cheat || get(*grid.grid, front) != char("#") {
+    if get(grid, front) != char("#") {
       array_add(*result, .{ front, 1 });
     }
   }
@@ -58,6 +51,7 @@ get_neighbours :: (grid: *GridWithCheat, node: Pair) -> [..] NS(Pair) {
 
 D16 :: #import,file "../day16/part1.jai";
 #import "STL";
+#import "Math";
 #import "Basic";
 #import "Print_Vars";
 #import "Hash_Table";
