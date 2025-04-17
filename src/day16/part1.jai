@@ -42,8 +42,8 @@ NodeType :: struct { coord: Pair; facing: Direction; }
 
 get_neighbours :: (g: *Grid(u8), n: NodeType) -> [..] NS(NodeType) {
   result: [..] NS(NodeType);
-    array_add(*result, .{.{n.coord,  left(n.facing)}, 1000});
-    array_add(*result, .{.{n.coord, right(n.facing)}, 1000});
+  array_add(*result, .{.{n.coord,  left(n.facing)}, 1000});
+  array_add(*result, .{.{n.coord, right(n.facing)}, 1000});
   front: NodeType;
   if n.facing == {
     case .East; front = .{right(n.coord), n.facing};
