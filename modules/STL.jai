@@ -1028,3 +1028,7 @@ dijkstra :: (graph: *$G, start: $N, neighbours: (*G, N) -> [..] NS(N)) -> Table(
     // release(*pool);
     return all_distances;
 }
+
+signum :: (n: int) -> int {
+  return ifx n > 0 then 1 else ifx n < 0 then -1 else 0;
+}
