@@ -6,13 +6,25 @@ main :: () {
   result := 0;
   for code: codes {
     minmom := 99999999;
-    e1s: [..] string; defer array_free(e1s);
+    e1s: [..] string;
+    defer {
+      for e1s free(it.data);
+      array_free(e1s);
+    };
     expand(*grid1_paths, char("A"), code, "", *e1s);
     for e1: e1s {
-      e2s: [..] string; defer array_free(e2s);
+      e2s: [..] string;
+      defer {
+        for e2s free(it.data);
+        array_free(e2s);
+      };
       expand(*grid2_paths, char("A"), e1, "", *e2s);
       for e2: e2s {
-        e3s: [..] string; defer array_free(e3s);
+        e3s: [..] string;
+        defer {
+          for e3s free(it.data);
+          array_free(e3s);
+        };
         expand(*grid2_paths, char("A"), e2, "", *e3s);
         for e3: e3s {
           if e3.count < minmom minmom = e3.count;
@@ -33,7 +45,7 @@ expand :: (paths: *Table(SE, [..] string), curr_char: u8, code: string, prefix: 
     array_add(result, its);
     return;
   };
-  new_prefix: [..] u8;
+  new_prefix: [..] u8; defer array_free(new_prefix);
   array_copy(*new_prefix, cast([]u8, prefix));
   for part: table_find(paths, .{curr_char, code[0]}) {
     for part array_add(*new_prefix, it);
