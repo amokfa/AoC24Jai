@@ -162,6 +162,17 @@ StackRArr :: struct ($N: int, $T: Type) {
   count := 0;
 }
 
+is_full :: (s: *StackRArr($N, $T)) -> bool {
+  return s.count >= N;
+}
+
+eq :: inline (s1: StackRArr($N, $T), s2: StackRArr(N, T)) -> bool {
+  if s1.count != s2.count return false;
+  return memcmp(xx *s1.data, xx *s2.data, s1.count * size_of(T)) == 0;
+}
+
+operator == :: inline (s1: StackRArr($N, $T), s2: StackRArr(N, T)) -> bool { return eq(s1, s2); }
+
 for_expansion :: (arr: *StackRArr, body: Code, flags: For_Flags) #expand {
   `it_index := ifx (flags & .REVERSE) then arr.count-1 else 0;
   end := ifx (flags & .REVERSE) then -1 else arr.count;
@@ -226,6 +237,20 @@ array_add :: (arr: *StackRArr, elem: $T) {
   arr.count += 1;
 }
 
+array_find :: (arr: *StackRArr($N, $T), pred: (T) -> bool) -> int {
+  for * arr {
+    if pred(it) return it_index;
+  }
+  return -1;
+}
+
+array_find :: (arr: *[..] $T, ctx: *$U, pred: (*U, *T) -> bool) -> int {
+  for * arr.* {
+    if pred(ctx, it) return it_index;
+  }
+  return -1;
+}
+
 delete :: (arr: *StackRArr, idx: int) {
   for idx..arr.count-2 {
     arr.data[it] = arr.data[it+1];
@@ -242,9 +267,6 @@ swap_after :: (arr: *StackRArr($N, $T), idx: int) {
 
 Pair :: struct {
   a, b: int;
-}
-operator == :: (p1: Pair, p2: Pair) -> bool {
-  return p1.a == p2.a && p1.b == p2.b;
 }
 #poke_name (#import "Basic") operator==;
 #poke_name (#import "Hash_Table") operator==;
@@ -421,15 +443,10 @@ for_expansion :: (map: ArrayMap($K, $V, $N), body: Code, flags: For_Flags) #expa
   }
 }
 
-operator == :: (a: $T, b: T) -> bool {
-  pa := cast(*u8) *a;
-  pb := cast(*u8) *b;
-  for 0..size_of(T)-1 {
-    if pa[it] != pb[it] {
-      return false;
-    }
-  }
-  return true;
+operator == :: inline (a: $T, b: T) -> bool {
+  pa := cast(*void, *a);
+  pb := cast(*void, *b);
+  return memcmp(pa, pb, size_of(T)) == 0;
 }
 
 Hash :: #import "Hash";
@@ -1031,4 +1048,10 @@ dijkstra :: (graph: *$G, start: $N, neighbours: (*G, N) -> [..] NS(N)) -> Table(
 
 signum :: (n: int) -> int {
   return ifx n > 0 then 1 else ifx n < 0 then -1 else 0;
+}
+
+remove_day :: (d: Date) -> Date {
+  result := d;
+  result.day = 0;
+  return result;
 }
