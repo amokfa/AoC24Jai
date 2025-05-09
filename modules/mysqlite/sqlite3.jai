@@ -6954,7 +6954,6 @@ fts5_api :: struct {
 #import "Basic"; // For assert, push_context
 
 #if OS == .LINUX {
-    // libsqlite3 :: #library,system "libsqlite3";
     libsqlite3 :: #library,no_dll "linux";
 } else #if OS == .MACOS {
     libsqlite3 :: #library,no_dll "macos";
