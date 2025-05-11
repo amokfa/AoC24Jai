@@ -8,7 +8,12 @@ open :: (path: string) -> Result(Db, string) {
   return .{ .Ok, .{ Ok = result }};
 }
 
-exec :: (db: Db, query: string, params: [] Any = .[], $output: Type = void) -> Result([..] output, string) {
+Query :: struct ($output: Type, $map_columns_using: enum {NAME; INDEX;} = .NAME) {
+  db: Db;
+  query: string;
+  params: [] Any;
+}
+iter :: (q: Query($output, $map_columns_using), body: Code) -> Result(void, string) #expand {
   ti :: type_info(output);
   assert(ti.type == .VOID || ti.type == .STRUCT);
   if ti.type == .STRUCT {
@@ -19,75 +24,96 @@ exec :: (db: Db, query: string, params: [] Any = .[], $output: Type = void) -> R
         (field.type.type == .INTEGER && field.type.runtime_size == 8 && cast(*Type_Info_Integer, field.type).signed));
     }
   }
-
-  r1 := prepare(db, query);
-  if r1.tag != .Ok return .{.Err, .{Err = tprint("invalid query: %", r1.data.Err)}};
+  r1 := prepare(q.db, q.query);
+  if r1.tag != .Ok {
+    return .{.Err, .{Err = tprint("invalid query: %", r1.data.Err)}};
+  }
   stmt := r1.data.Ok;
   defer destroy(stmt);
-  for param: params {
+  for param: q.params {
     r2 := bind(stmt, xx(it_index+1), param);
-    if r2.tag != .Ok return .{.Err, .{Err = tprint("binding param(%) failed: %", it_index, r2.data.Err)}};
+    if r2.tag != .Ok {
+      return .{.Err, .{Err = tprint("binding param(%) failed: %", it_index, r2.data.Err)}};
+    }
   }
 
-  result: [..] output;
+  #if map_columns_using == .NAME {
+    col_names_to_index: ListMap(string, s32);
+    cols_count := sqlite3_column_count(stmt.inner);
+    for index: Range.{0, cols_count} {
+      name := tprint("%", from_c_string(sqlite3_column_name(stmt.inner, xx index)));
+      set(*col_names_to_index, name, cast(s32, index));
+    }
+  }
+
+  `it_index := 0;
+  `it: output;
   while true {
     r3 := step(stmt);
     if r3.tag == {
-      case .Done; break;
+      case .Done;
+        return .{tag=.Ok};
       case .Row;
         if ti.type == .STRUCT {
           tis := cast(*Type_Info_Struct, ti);
-          row: output;
           for field: tis.members {
+            #if map_columns_using == .NAME {
+              col_idx := get(*col_names_to_index, field.name).*;
+            } else {
+              col_idx := cast(s32, it_index);
+            };
             if field.type.type == {
               case .STRING;
-                fptr := cast(*string, cast(*void, *row) + field.offset_in_bytes);
-                fptr.* = column(stmt, xx it_index, string);
+                fptr := cast(*string, cast(*void, *it) + field.offset_in_bytes);
+                fptr.* = column(stmt, col_idx, string);
               case .INTEGER;
-                fptr := cast(*s64, cast(*void, *row) + field.offset_in_bytes);
-                fptr.* = column(stmt, xx it_index, s64);
+                fptr := cast(*s64, cast(*void, *it) + field.offset_in_bytes);
+                fptr.* = column(stmt, col_idx, s64);
             }
           }
-          array_add(*result, row);
+          defer it_index += 1;
+          #insert body;
         }
       case .Busy;
       case .Err;
         return .{.Err, .{Err = tprint("stepping failed: %", r3.data.Err)}};
     }
   }
-  return .{.Ok, .{Ok = result}};
+}
+
+// SELECT name, id FROM tags;
+//   name => 0
+//   id => 1
+// struct { id: int; name: string; }
+
+
+exec :: (db: Db, query: string, params: [] Any = .[], $output: Type = void) -> Result([..] output, string) {
+  arr: [..] output; arr.allocator = temp;
+  result := iter(
+    Query(output).{db, query, params},
+    #code {
+      array_add(*arr, it);
+    }
+  );
+  if result.tag == {
+    case .Ok; return .{.Ok, .{Ok = arr}};
+    case .Err; return .{.Err, .{Err = result.data.Err}};
+  }
+  assert(false);
+  return .{.Err, .{Err="what?"}};
 }
 
 exec_value :: (db: Db, query: string, params: [] Any, $output: Type) -> Result(output, string) {
-  ti :: type_info(output);
-  assert(ti.type == .STRING || (ti.type == .INTEGER && ti.runtime_size == 8 && cast(*Type_Info_Integer, ti).signed));
-
-  r1 := prepare(db, query);
-  if r1.tag != .Ok return .{.Err, .{Err = tprint("invalid query: %", r1.data.Err)}};
-  stmt := r1.data.Ok;
-  defer destroy(stmt);
-  for param: params {
-    r2 := bind(stmt, xx(it_index+1), param);
-    if r2.tag != .Ok return .{.Err, .{Err = tprint("binding param(%) failed: %", it_index, r2.data.Err)}};
+  result := iter(
+    Query(struct { value: output; }, .INDEX).{db, query, params},
+    #code return .{.Ok, .{Ok = it.value}}
+  );
+  if result.tag == {
+    case .Ok;return .{.Err, .{Err = "no rows found"}};
+    case .Err; return .{.Err, .{Err = result.data.Err}};
   }
-
-  while true {
-    r3 := step(stmt);
-    if r3.tag == {
-      case .Done; break;
-      case .Row;
-        #if ti.type == {
-          case .STRING;
-            return .{.Ok, .{Ok = column(stmt, xx 0, string)}};
-          case .INTEGER;
-            return .{.Ok, .{Ok = column(stmt, xx 0, s64)}};
-        }
-      case .Busy;
-      case .Err;
-        return .{.Err, .{Err = tprint("stepping failed: %", r3.data.Err)}};
-    }
-  }
-  return .{.Err, .{Err = "no rows found"}};
+  assert(false);
+  return .{.Err, .{Err="unreachable"}};
 }
 
 Db :: *sqlite3;
@@ -223,11 +249,6 @@ parse_int :: (value: Any) -> ok: bool, value: s64 {
   }
   assert(false);
   return false, 0;
-}
-
-Query :: struct ($output: Type) {
-  query: string;
-  params: [] Any;
 }
 
 #import,file "./sqlite3.jai";

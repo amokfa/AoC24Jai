@@ -1056,3 +1056,46 @@ remove_day :: (d: Date) -> Date {
   return result;
 }
 
+ListMap :: struct ($K: Type, $V: Type) {
+  keys: [..] K;
+  vals: [..] V;
+  occupied: [..] bool;
+}
+
+// returned pointer must be used immediately
+// i.e. either read from or write to it immediately after calling `get()`
+get :: (m: *ListMap($K, $V), k: K) -> *V {
+  using m;
+  for Range.{0, keys.count} {
+    if !occupied[it] continue;
+    if keys[it] == k return *vals[it];
+  }
+  return null;
+}
+
+set :: (m: *ListMap($K, $V), k: K, v: V) {
+  using m;
+  for Range.{0, keys.count} {
+    if occupied[it] continue;
+    keys[it] = k;
+    vals[it] = v;
+    occupied[it] = true;
+    return;
+  }
+  array_add(*keys, k);
+  array_add(*vals, v);
+  array_add(*occupied, true);
+}
+
+del :: (m: *ListMap($K, $V), k: K) -> removed: bool, value: V {
+  using m;
+  for Range.{0, keys.count} {
+    if !occupied[it] continue;
+    if keys[it] == K {
+      occupied[it] = false;
+      return true, vals[it];
+    }
+  }
+  v: V;
+  return false, v;
+}
