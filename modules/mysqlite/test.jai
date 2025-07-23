@@ -3,15 +3,18 @@ main :: () {
   r1 := open("/home/sagartiwari/src/dotfiles/finances.db");
   assert(r1.tag == .Ok);
   db := r1.data.Ok;
-  query := "SELECT id, name FROM tags ORDER BY id DESC LIMIT 20";
+  query := "SELECT id, name FROM tags ORDER BY id DESC LIMIT 3";
 
-  q := Query(struct {id: int; name: string;}).{db, query, .[]};
-  it := exec(db, query, .[], struct{id: int; name: string;});
-  if it.tag == {
-    case .Ok; dbg(it.data.Ok);
-    case .Err; println("ERROR: %", it.data.Err); return;
+  q := Query(struct {id: s64; name: [..]u8;}).{db, query, .[]};
+  result := iter(
+    q,
+    #code {
+      dbg(it);
+    }
+  );
+  if result.tag == .Err {
+    println("ERROR: %", result.data.Err);
   }
-  dbg("this prints");
 }
 
 m2 :: () {

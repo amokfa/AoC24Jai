@@ -13,15 +13,19 @@ Query :: struct ($output: Type, $map_columns_using: enum {NAME; INDEX;} = .NAME)
   query: string;
   params: [] Any;
 }
-iter :: (q: Query($output, $map_columns_using), body: Code) -> Result(void, string) #expand {
+iter :: (q: Query($output, $map_columns_using), body: Code) -> Result(int, string) #expand {
   ti :: type_info(output);
-  assert(ti.type == .VOID || ti.type == .STRUCT);
-  if ti.type == .STRUCT {
+  #assert(ti.type == .VOID || ti.type == .STRUCT);
+  #if ti.type == .STRUCT {
     tis := cast(*Type_Info_Struct, ti);
     for field: tis.members {
-      assert(
-        field.type.type == .STRING ||
-        (field.type.type == .INTEGER && field.type.runtime_size == 8 && cast(*Type_Info_Integer, field.type).signed));
+      assert(field.type.type == .STRING || field.type.type == .INTEGER || field.type.type == .ARRAY);
+      if field.type.type == .ARRAY {
+        tia := cast(*Type_Info_Array, field.type);
+        assert(tia.array_type == .RESIZABLE && tia.element_type.type == .INTEGER);
+        tie := cast(*Type_Info_Integer, tia.element_type);
+        assert(tie.runtime_size == 1 && !tie.signed);
+      }
     }
   }
   r1 := prepare(q.db, q.query);
@@ -46,13 +50,14 @@ iter :: (q: Query($output, $map_columns_using), body: Code) -> Result(void, stri
     }
   }
 
+  rows_count := 0;
   `it_index := 0;
   `it: output;
   while true {
     r3 := step(stmt);
     if r3.tag == {
       case .Done;
-        return .{tag=.Ok};
+        return .{tag=.Ok, data=.{Ok=rows_count}};
       case .Row;
         if ti.type == .STRUCT {
           tis := cast(*Type_Info_Struct, ti);
@@ -67,10 +72,19 @@ iter :: (q: Query($output, $map_columns_using), body: Code) -> Result(void, stri
                 fptr := cast(*string, cast(*void, *it) + field.offset_in_bytes);
                 fptr.* = column(stmt, col_idx, string);
               case .INTEGER;
-                fptr := cast(*s64, cast(*void, *it) + field.offset_in_bytes);
-                fptr.* = column(stmt, col_idx, s64);
+                fptr := cast(*void, *it) + field.offset_in_bytes;
+                value := column(stmt, col_idx, s64);
+                ok := checked_cast(value, fptr, field.type);
+                if !ok return .{.Err, .{Err = tprint("value(%) out of bounds for field(%)", value, field.name)}};
+              case .ARRAY;
+                fptr := cast(*[..]u8, cast(*void, *it) + field.offset_in_bytes);
+                fptr.allocator = temp;
+                fptr.count = 0;
+                slice := column(stmt, col_idx, []u8);
+                array_copy(fptr, slice);
             }
           }
+          rows_count += 1;
           defer it_index += 1;
           #insert body;
         }
@@ -79,6 +93,11 @@ iter :: (q: Query($output, $map_columns_using), body: Code) -> Result(void, stri
         return .{.Err, .{Err = tprint("stepping failed: %", r3.data.Err)}};
     }
   }
+}
+
+Option :: struct ($T: Type) {
+  present: bool;
+  value: T;
 }
 
 // SELECT name, id FROM tags;
@@ -167,7 +186,13 @@ bind :: (stmt: Stmt, index: s32, value: Any) -> Result(void, string) {
     case .STRING;
       s := cast(*string, value.value_pointer).*;
       exit_code = sqlite3_bind_text(stmt.inner, index, xx s.data, xx s.count, null);
-    case .ARRAY; return .{ .Err, .{ Err = tprint("I'm not using blobs right now so don't need to figure these out ATM: %", value) }};
+    case .ARRAY;
+      tia := cast(*Type_Info_Array, value.type);
+      assert(tia.element_type.type == .INTEGER);
+      tie := cast(*Type_Info_Integer, tia.element_type);
+      assert(tie.runtime_size == 1 && !tie.signed);
+      arr := cast(*[]u8, value.value_pointer);
+      exit_code = sqlite3_bind_blob(stmt.inner, index, xx arr.data, xx arr.count, null);
     case; return .{ .Err, .{ Err = tprint("invalid bind parameter: %", value) }};
   };
   if exit_code != SQLITE_OK {
@@ -213,6 +238,11 @@ column :: (stmt: Stmt, index: s32, $type: Type) -> type {
     case .STRING;
       cs := sqlite3_column_text(stmt.inner, index);
       return tprint("%", from_c_string(cs));
+    case .ARRAY;
+      result: type;
+      result.data = xx sqlite3_column_blob(stmt.inner, index);
+      result.count = sqlite3_column_bytes(stmt.inner, index);
+      return result;
     case;
       assert(false, "don't support anything else rn coz I don't need anything else right now");
   }
@@ -225,27 +255,29 @@ parse_int :: (value: Any) -> ok: bool, value: s64 {
   info := cast(*Type_Info_Integer, value.type);
   if info.signed == {
     case true;
-    if info.runtime_size == {
-      case 1;
-        return true, xx cast(*s8, value.value_pointer).*;
-      case 2;
-        return true, xx cast(*s16, value.value_pointer).*;
-      case 4;
-        return true, xx cast(*s32, value.value_pointer).*;
-      case 8;
-        return true, cast(*s64, value.value_pointer).*;
-    }
+      if info.runtime_size == {
+        case 1;
+          return true, xx cast(*s8, value.value_pointer).*;
+        case 2;
+          return true, xx cast(*s16, value.value_pointer).*;
+        case 4;
+          return true, xx cast(*s32, value.value_pointer).*;
+        case 8;
+          return true, cast(*s64, value.value_pointer).*;
+      }
     case false;
-    if info.runtime_size == {
-      case 1;
-        return true, xx cast(*u8, value.value_pointer).*;
-      case 2;
-        return true, xx cast(*u16, value.value_pointer).*;
-      case 4;
-        return true, xx cast(*u32, value.value_pointer).*;
-      case 8;
-        return false, 0;
-    }
+      if info.runtime_size == {
+        case 1;
+          return true, xx cast(*u8, value.value_pointer).*;
+        case 2;
+          return true, xx cast(*u16, value.value_pointer).*;
+        case 4;
+          return true, xx cast(*u32, value.value_pointer).*;
+        case 8;
+          ptr := cast(*u64, value.value_pointer);
+          if ptr.* > xx S64_MAX return false, 0;
+          else return true, xx ptr.*;
+      }
   }
   assert(false);
   return false, 0;
@@ -254,3 +286,4 @@ parse_int :: (value: Any) -> ok: bool, value: s64 {
 #import,file "./sqlite3.jai";
 #import "Basic";
 #import "STL";
+#import "Math";

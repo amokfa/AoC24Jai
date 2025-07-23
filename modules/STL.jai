@@ -5,6 +5,7 @@
 #import "Basic";
 #import "String";
 #import "Math";
+#import "Bucket_Array";
 
 suba :: (a: []$T, s: int, e: int) -> []T {
   result := a;
@@ -246,6 +247,13 @@ array_find :: (arr: *StackRArr($N, $T), pred: (T) -> bool) -> int {
 
 array_find :: (arr: *[..] $T, ctx: *$U, pred: (*U, *T) -> bool) -> int {
   for * arr.* {
+    if pred(ctx, it) return it_index;
+  }
+  return -1;
+}
+
+array_find :: (arr: *Bucket_Array($T, $N), ctx: *$U, pred: (*U, *T) -> bool) -> int {
+  for * arr {
     if pred(ctx, it) return it_index;
   }
   return -1;
@@ -526,6 +534,14 @@ position_float :: (parent: Rect, w: float32 = -1.0, h: float32 = -1.0, top: floa
     ry = ymax - rh;
   }
   return .{rx, ry, rw, rh};
+}
+
+position :: (r: Rect) -> Vector2 {
+  return .{r.x, r.y};
+}
+
+size :: (r: Rect) -> Vector2 {
+  return .{r.w, r.h};
 }
 
 int_validator :: (s: string) -> bool {
@@ -1049,6 +1065,9 @@ dijkstra :: (graph: *$G, start: $N, neighbours: (*G, N) -> [..] NS(N)) -> Table(
 signum :: (n: int) -> int {
   return ifx n > 0 then 1 else ifx n < 0 then -1 else 0;
 }
+signum :: (n: float) -> float {
+  return ifx n > 0 then 1.0 else ifx n < 0 then -1.0 else 0.0;
+}
 
 remove_day :: (d: Date) -> Date {
   result := d;
@@ -1099,3 +1118,75 @@ del :: (m: *ListMap($K, $V), k: K) -> removed: bool, value: V {
   v: V;
   return false, v;
 }
+
+checked_cast :: (from: s64, to: *void, type: *Type_Info) -> ok: bool {
+  assert(type.type == .INTEGER);
+  ti := cast(*Type_Info_Integer, type);
+  if ti.signed {
+    if ti.runtime_size == {
+      case 1;
+        if from > S8_MAX return false;
+        cast(*s8, to).* = xx from;
+        return true;
+      case 2;
+        if from > S16_MAX return false;
+        cast(*s16, to).* = xx from;
+        return true;
+      case 4;
+        if from > S32_MAX return false;
+        cast(*s32, to).* = xx from;
+        return true;
+      case 8;
+        cast(*s64, to).* = from;
+        return true;
+    }
+  } else {
+    if ti.runtime_size == {
+      case 1;
+        if from < 0 || from > xx U8_MAX return false;
+        cast(*u8, to).* = xx from;
+        return true;
+      case 2;
+        if from < 0 || from > xx U16_MAX return false;
+        cast(*u16, to).* = xx from;
+        return true;
+      case 4;
+        if from < 0 || from > xx U32_MAX return false;
+        cast(*u32, to).* = xx from;
+        return true;
+      case 8;
+        if from < 0 return false;
+        cast(*u64, to).* = xx from;
+        return true;
+    }
+  }
+  return false;
+}
+
+profile_block :: (id: string = "") #expand {
+  _start := current_time_monotonic();
+  `defer {
+    _end := current_time_monotonic();
+    print(
+      "% took %ms\n",
+      ifx id.count == 0 #procedure_name() else id,
+      (_end - _start) / F
+    );
+  }
+}
+F :: 1_000_000_000_000;
+
+mouse_pos :: (right_handed: bool) -> Vector2 {
+  x, y := get_mouse_pointer_position(right_handed);
+  return .{xx x, xx y};
+}
+
+inside :: (r: Rect, v: Vector2) -> bool {
+  return v.x >= r.x && v.x <= r.x+r.w && v.y >= r.y && v.y <= r.y+r.h;
+}
+
+rect :: (pos: Vector2, size: Vector2) -> Rect {
+  return .{pos.x, pos.y, size.x, size.y};
+}
+
+#import "Window_Creation";
